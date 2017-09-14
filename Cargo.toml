@@ -1,0 +1,9 @@
+[package]
+name = "ndimage"
+version = "0.1.0"
+authors = ["Robin Chavignat"]
+
+[dependencies]
+error-chain = "*"
+ndarray = "*"
+num-traits = "*"

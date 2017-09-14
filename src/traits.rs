@@ -13,6 +13,8 @@ impl Primitive for i32 { }
 impl Primitive for u32 { }
 impl Primitive for i64 { }
 impl Primitive for u64 { }
+impl Primitive for usize { }
+impl Primitive for isize { }
 impl Primitive for f32 { }
 impl Primitive for f64 { }
 

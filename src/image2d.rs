@@ -18,6 +18,7 @@ pub struct Image2D<P>
 
 /// Type of immutable `Image2D` views.
 pub type Image2DView<'a, P> = ndarray::ArrayView<'a, P, Ix2>;
+pub type Image2DViewMut<'a, P> = ndarray::ArrayViewMut<'a, P, Ix2>;
 
 impl<'a, P> Image2D<P>
     where P: Pixel
@@ -61,6 +62,18 @@ impl<'a, P> Image2D<P>
         let w = w as isize;
         let h = h as isize;
         self.buffer.slice(s![x..x + w, y..y + h])
+    }
+
+    /// Return a mutable view to a subset of the image of specified dimensions starting at the specified
+    /// coordinates.
+    ///
+    /// **Panics** if the specified region crosses image boundaries.
+    pub fn sub_image_mut(&'a mut self, x: u32, y: u32, w: u32, h: u32) -> Image2DViewMut<'a, P> {
+        let x = x as isize;
+        let y = y as isize;
+        let w = w as isize;
+        let h = h as isize;
+        self.buffer.slice_mut(s![x..x + w, y..y + h])
     }
 }
 

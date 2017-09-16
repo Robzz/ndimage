@@ -25,37 +25,37 @@ impl<'a, P> Image2D<P>
     /// Create a new image of specified dimensions from a `Vec`.
     ///
     /// **Error**: `InvalidDimensions` if the dimensions do not match the length of `v`.
-    pub fn from_vec(w: usize, h: usize, v: Vec<P>) -> Result<Image2D<P>> {
-        let buf = try!(Array2::from_shape_vec((w, h), v));
+    pub fn from_vec(w: u32, h: u32, v: Vec<P>) -> Result<Image2D<P>> {
+        let buf = try!(Array2::from_shape_vec((w as usize, h as usize), v));
         Ok(Image2D{ buffer: buf })
     }
 
     /// Return the pixel at the specified coordinates.
     ///
     /// **Panics** if the index is out of bounds.
-    pub fn get_pixel(&self, x: usize, y: usize) -> P {
-        self.buffer[[x, y]].clone()
+    pub fn get_pixel(&self, x: u32, y: u32) -> P {
+        self.buffer[[x as usize, y as usize]].clone()
     }
 
     /// Set the pixel at the specified coordinates to the specified value.
     ///
     /// **Panics** if the index is out of bounds.
-    pub fn put_pixel(&mut self, x: usize, y: usize, pixel: P) {
-        self.buffer[[x, y]] = pixel;
+    pub fn put_pixel(&mut self, x: u32, y: u32, pixel: P) {
+        self.buffer[[x as usize, y as usize]] = pixel;
     }
 
     /// Return the width of the image.
-    pub fn width(&self) -> usize { self.buffer.cols() }
+    pub fn width(&self) -> u32 { self.buffer.cols() as u32 }
     /// Return the height of the image.
-    pub fn height(&self) -> usize { self.buffer.rows() }
+    pub fn height(&self) -> u32 { self.buffer.rows() as u32 }
     /// Return the dimensions of the image as a `(width, height)` tuple.
-    pub fn dimensions(&self) -> (usize, usize) { self.buffer.dim() }
+    pub fn dimensions(&self) -> (u32, u32) { (self.width(), self.height()) }
 
     /// Return a view to a subset of the image of specified dimensions starting at the specified
     /// coordinates.
     ///
     /// **Panics** if the specified region crosses image boundaries.
-    pub fn sub_image(&'a self, x: usize, y: usize, w: usize, h: usize) -> Image2DView<'a, P> {
+    pub fn sub_image(&'a self, x: u32, y: u32, w: u32, h: u32) -> Image2DView<'a, P> {
         let x = x as isize;
         let y = y as isize;
         let w = w as isize;
@@ -90,8 +90,8 @@ impl<P> Image2D<P>
     where P: Pixel + Zero
 {
     /// Create a new image of specified dimensions filled with zeros.
-    pub fn zeros(width: usize, height: usize) -> Image2D<P> {
-        Image2D { buffer: Array2::zeros((width, height)) }
+    pub fn zeros(width: u32, height: u32) -> Image2D<P> {
+        Image2D { buffer: Array2::zeros((width as usize, height as usize)) }
     }
 }
 
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_zeros() {
-        fn test_zeros_helper<P>(w: usize, h: usize)
+        fn test_zeros_helper<P>(w: u32, h: u32)
             where P: Pixel + Zero + Debug
         {
             let img = Image2D::<P>::zeros(w, h);

@@ -86,7 +86,8 @@ impl<'a, P> IntoIterator for &'a mut Image2D<P>
     }
 }
 
-impl<P> Image2D<P> where P: Pixel + Zero
+impl<P> Image2D<P>
+    where P: Pixel + Zero
 {
     /// Create a new image of specified dimensions filled with zeros.
     pub fn zeros(width: usize, height: usize) -> Image2D<P> {
@@ -97,13 +98,15 @@ impl<P> Image2D<P> where P: Pixel + Zero
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ::Luma;
 
+    use std::iter::FromIterator;
     use std::fmt::Debug;
 
     #[test]
     fn test_from_vec() {
-        let v1 = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
-        let v2 = vec![1, 2, 3, 4, 5, 6];
+        let v1 = Vec::from_iter((1u8..10u8).map(|n| Luma::new([n])));
+        let v2 = Vec::from_iter((1u8..7u8).map(|n| Luma::new([n])));
 
         assert!(Image2D::from_vec(3, 3, v1.clone()).is_ok());
         assert!(Image2D::from_vec(2, 3, v2.clone()).is_ok());
@@ -116,15 +119,15 @@ mod tests {
     #[test]
     fn test_zeros() {
         fn test_zeros_helper<P>(w: usize, h: usize)
-            where P: Pixel + Zero + PartialEq + Debug
+            where P: Pixel + Zero + Debug
         {
             let img = Image2D::<P>::zeros(w, h);
             for pixel in &img {
-                assert_eq!(*pixel, P::zero());
+                assert!(pixel.is_zero());
             }
         };
-        test_zeros_helper::<u8>(100, 100);
-        test_zeros_helper::<f32>(100, 100);
+        test_zeros_helper::<Luma<u8>>(100, 100);
+        test_zeros_helper::<Luma<f32>>(100, 100);
     }
 
     #[test]
@@ -134,5 +137,25 @@ mod tests {
         for (i, p) in v.into_iter().enumerate() {
             assert!(i + 1 == p);
         }
+    }
+
+    #[test]
+    fn test_sub_image() {
+        let v: Vec<Luma<usize>> = (1..10).map(|n| Luma::new([n])).collect();
+        let img = Image2D::from_vec(3, 3, v).unwrap();
+        let subimg1 = img.sub_image(1, 1, 2, 2);
+
+        fn subimg_vec_eq<'a>(subimg: Image2DView<'a, Luma<usize>>, v: &Vec<usize>) -> bool {
+            let img_iter = subimg.into_iter();
+            let v_iter   = v.into_iter();
+            match img_iter.len() == v_iter.len() {
+                true => !img_iter.zip(v_iter).any(|(p, i)| p.data[0] != *i),
+                false => false
+            }
+        }
+
+        let subimg1_vec: Vec<usize> = vec![5, 6, 8, 9];
+
+        assert!(subimg_vec_eq(subimg1, &subimg1_vec));
     }
 }

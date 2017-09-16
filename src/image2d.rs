@@ -59,6 +59,18 @@ impl<'a, P> Image2D<P>
     /// Return the dimensions of the image as a `(width, height)` tuple.
     pub fn dimensions(&self) -> (u32, u32) { (self.width(), self.height()) }
 
+    // TODO: map to u32's for coherence
+    /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &P)
+    pub fn enumerate_pixels(&self) -> ndarray::iter::IndexedIter<P, Ix2> {
+        self.buffer.indexed_iter()
+    }
+
+    // TODO: map to u32's for coherence
+    /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &mut P)
+    pub fn enumerate_pixels_mut(&mut self) -> ndarray::iter::IndexedIterMut<P, Ix2> {
+        self.buffer.indexed_iter_mut()
+    }
+
     /// Return a view to a subset of the image of specified dimensions starting at the specified
     /// coordinates.
     ///
@@ -148,6 +160,21 @@ mod tests {
 
         for (p, i) in img.into_iter().zip(v.into_iter()) {
             assert!(&i == p);
+        }
+    }
+
+    #[test]
+    fn test_enumerate_pixels() {
+        let mut v: Vec<Luma<u8>> = vec![];
+        for x in 0..3 {
+            for y in 0..3 {
+                v.push(Luma::from((2*x + 3*y) as u8));
+            }
+        }
+        let img = Image2D::from_vec(3, 3, v.clone()).unwrap();
+
+        for ((x, y), p) in img.enumerate_pixels().map(|((x, y), p)| ((x, y), p.channels()[0])) {
+            assert!((2*x + 3*y) as u8 == p);
         }
     }
 

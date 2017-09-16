@@ -132,10 +132,11 @@ mod tests {
 
     #[test]
     fn test_into_iter() {
-        let v: Vec<usize> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let v: Vec<Luma<u8>> = (1..10).map(|i| Luma::from(i)).collect();
+        let img = Image2D::from_vec(3, 3, v.clone()).unwrap();
 
-        for (i, p) in v.into_iter().enumerate() {
-            assert!(i + 1 == p);
+        for (p, i) in img.into_iter().zip(v.into_iter()) {
+            assert!(&i == p);
         }
     }
 

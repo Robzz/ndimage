@@ -23,6 +23,13 @@ pub type Image2DViewMut<'a, P> = ndarray::ArrayViewMut<'a, P, Ix2>;
 impl<'a, P> Image2D<P>
     where P: Pixel
 {
+    /// Create a new image of specified dimensions filled with zeros.
+    pub fn new(width: u32, height: u32) -> Image2D<P>
+        where P: Pixel + Zero
+    {
+        Image2D { buffer: Array2::zeros((width as usize, height as usize)) }
+    }
+
     /// Create a new image of specified dimensions from a `Vec`.
     ///
     /// **Error**: `InvalidDimensions` if the dimensions do not match the length of `v`.
@@ -99,15 +106,6 @@ impl<'a, P> IntoIterator for &'a mut Image2D<P>
     }
 }
 
-impl<P> Image2D<P>
-    where P: Pixel + Zero
-{
-    /// Create a new image of specified dimensions filled with zeros.
-    pub fn zeros(width: u32, height: u32) -> Image2D<P> {
-        Image2D { buffer: Array2::zeros((width as usize, height as usize)) }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,11 +128,11 @@ mod tests {
     }
 
     #[test]
-    fn test_zeros() {
+    fn test_new() {
         fn test_zeros_helper<P>(w: u32, h: u32)
             where P: Pixel + Zero + Debug
         {
-            let img = Image2D::<P>::zeros(w, h);
+            let img = Image2D::<P>::new(w, h);
             for pixel in &img {
                 assert!(pixel.is_zero());
             }

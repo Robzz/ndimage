@@ -29,16 +29,13 @@ error_chain! {
     //
     // This section can be empty.
     foreign_links {
-        InvalidDimensions(ShapeError);
+        InvalidDimensionsNdarray(ShapeError);
     }
 
     // Define additional `ErrorKind` variants. The syntax here is
     // the same as `quick_error!`, but the `from()` and `cause()`
     // syntax is not supported.
     errors {
-        //InvalidArguments(msg: String) {
-            //description("Invalid argument")
-            //display("Invalid argument: {}", msg)
-        //}
+        InvalidDimensions
     }
 }

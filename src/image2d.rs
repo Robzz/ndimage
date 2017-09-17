@@ -30,11 +30,28 @@ impl<'a, P> Image2D<P>
         Image2D { buffer: Array2::zeros((width as usize, height as usize)) }
     }
 
-    /// Create a new image of specified dimensions from a `Vec`.
+    /// Create a new image of specified dimensions from a `Vec` of the specified pixel type.
     ///
     /// **Error**: `InvalidDimensions` if the dimensions do not match the length of `v`.
     pub fn from_vec(w: u32, h: u32, v: Vec<P>) -> Result<Image2D<P>> {
         let buf = try!(Array2::from_shape_vec((w as usize, h as usize), v));
+        Ok(Image2D{ buffer: buf })
+    }
+
+    /// Create a new image of specified dimensions from a `Vec` of the specified pixel type's
+    /// subpixel.
+    ///
+    /// **Error**: `InvalidDimensions` if the dimensions do not match the length of `v`.
+    pub fn from_raw_vec(w: u32, h: u32, v: &Vec<P::Subpixel>) -> Result<Image2D<P>> {
+        let pixels_iter = v.chunks(P::n_channels());
+        if pixels_iter.len() != (w * h) as usize {
+            bail!(ErrorKind::InvalidDimensions);
+        }
+        let mut v_pixels = vec![];
+        for channels in pixels_iter {
+            v_pixels.push(P::from_slice(channels))
+        }
+        let buf = try!(Array2::from_shape_vec((w as usize, h as usize), v_pixels));
         Ok(Image2D{ buffer: buf })
     }
 

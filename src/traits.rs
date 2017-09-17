@@ -13,11 +13,26 @@ impl<T> Primitive for T
 pub trait Pixel: Clone + PartialEq {
     type Subpixel;
 
+    /// Return the number of channels in the type.
     fn n_channels() -> usize;
 
+    /// Return a slice containing the different channels of the pixel.
     fn channels(&self) -> &[Self::Subpixel];
 
+    /// Return a mutable slice containing the different channels of the pixel.
     fn channels_mut(&mut self) -> &mut [Self::Subpixel];
+
+    /// Create a new pixel from a slice.
+    ///
+    /// **Panics**: the length of the slice is not checked, so this function will panic if s.len()
+    /// is less than the number of channels in the pixel.
+    fn from_slice(s: &[Self::Subpixel]) -> Self;
+
+    /// Set the value of the pixel from a slice.
+    ///
+    /// **Panics**: the length of the slice is not checked, so this function will panic if s.len()
+    /// is less than the number of channels in the pixel.
+    fn set_to_slice(&mut self, s: &[Self::Subpixel]);
 
     fn sum<'a>(&'a self) -> Self::Subpixel
         where Self::Subpixel: Primitive

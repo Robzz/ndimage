@@ -2,7 +2,7 @@ use num_traits::Zero;
 
 use traits::{Primitive, Pixel, PixelOps};
 
-use std::ops::{Add, Sub, Mul, Div, Rem};
+use std::ops::{Add, Sub, Mul, Div, Rem, Index};
 
 macro_rules! impl_pixels {
     ( $( $name:ident, $n_channels:expr);+ ) =>
@@ -141,6 +141,16 @@ macro_rules! impl_pixels {
             }
         }
 
+        impl<P> Index<u8> for $name<P>
+            where P: Primitive
+        {
+            type Output = P;
+
+            fn index(&self, index: u8) -> &P {
+                &self.data[index as usize]
+            }
+        }
+
         impl<P> Pixel for $name<P>
             where P: Primitive
         {
@@ -151,6 +161,20 @@ macro_rules! impl_pixels {
             fn channels(&self) -> &[P] { &self.data }
 
             fn channels_mut(&mut self) -> &mut [P] { &mut self.data }
+
+            fn from_slice(s: &[Self::Subpixel]) -> $name<P> {
+                let mut p = $name::zero();
+                for i in 0..$n_channels {
+                    p.data[i] = s[i];
+                }
+                p
+            }
+
+            fn set_to_slice(&mut self, s: &[Self::Subpixel]) {
+                for i in 0..$n_channels {
+                    self.data[i] = s[i];
+                }
+            }
         }
 
         impl<P> PixelOps for $name<P>

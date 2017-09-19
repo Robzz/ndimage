@@ -41,5 +41,11 @@ pub trait Pixel: Clone + PartialEq {
     }
 }
 
+/// Trait for types representing image regions.
+pub trait Region {
+    /// Return `true` if the region contains the specified point, `false` otherwise.
+    fn contains(&self, x: u32, y: u32) -> bool;
+}
+
 pub trait PixelOps: Pixel + NumOps { }
 pub trait PixelOpsRef: PixelOps + NumRef { }

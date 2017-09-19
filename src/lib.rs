@@ -6,6 +6,7 @@ extern crate num_traits;
 
 pub mod errors;
 pub mod image2d;
+pub mod rect;
 pub mod traits;
 mod pixel_types;
 

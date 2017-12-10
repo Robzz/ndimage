@@ -1,11 +1,13 @@
 //! # ndimage - A [ndarray](https://crates.io/crates/ndarray) backed image library.
 
-#[macro_use] extern crate error_chain;
+#[macro_use] extern crate failure;
 #[macro_use] extern crate ndarray;
 extern crate num_traits;
+extern crate png;
 
-pub mod errors;
+//pub mod dynamic_image;
 pub mod image2d;
+pub mod io;
 pub mod rect;
 pub mod traits;
 mod pixel_types;

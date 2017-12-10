@@ -1,5 +1,6 @@
 //! Defines a generic 2D image type.
 
+use failure::Error;
 use ndarray;
 use ndarray::prelude::*;
 use num_traits::{Zero};
@@ -7,11 +8,11 @@ use num_traits::{Zero};
 use std::cmp::min;
 use std::iter::{IntoIterator};
 
-use errors::*;
 use rect::Rect;
 use traits::Pixel;
 
 /// 2-dimensional image type.
+#[derive(Debug, PartialEq, Eq)]
 pub struct Image2D<P>
     where P: Pixel
 {
@@ -37,26 +38,33 @@ impl<'a, P> Image2D<P>
     /// Create a new image of specified dimensions from a `Vec` of the specified pixel type.
     ///
     /// **Error**: `InvalidDimensions` if the dimensions do not match the length of `v`.
-    pub fn from_vec(w: u32, h: u32, v: Vec<P>) -> Result<Image2D<P>> {
+    pub fn from_vec(w: u32, h: u32, v: Vec<P>) -> Result<Image2D<P>, Error> {
         let buf = try!(Array2::from_shape_vec((h as usize, w as usize), v));
-        Ok(Image2D{ buffer: buf })
+        Ok(Image2D { buffer: buf })
     }
 
     /// Create a new image of specified dimensions from a `Vec` of the specified pixel type's
     /// subpixel.
     ///
     /// **Error**: `InvalidDimensions` if the dimensions do not match the length of `v`.
-    pub fn from_raw_vec(w: u32, h: u32, v: &Vec<P::Subpixel>) -> Result<Image2D<P>> {
+    pub fn from_raw_vec(w: u32, h: u32, v: &Vec<P::Subpixel>) -> Result<Image2D<P>, Error> {
         let pixels_iter = v.chunks(P::n_channels());
-        if pixels_iter.len() != (w * h) as usize {
-            bail!(ErrorKind::InvalidDimensions);
-        }
+        ensure!(pixels_iter.len() == (w * h) as usize,
+                "Buffer has incorrect size {}, expected {}.", pixels_iter.len(), w * h);
         let mut v_pixels = vec![];
         for channels in pixels_iter {
             v_pixels.push(P::from_slice(channels))
         }
         let buf = try!(Array2::from_shape_vec((h as usize, w as usize), v_pixels));
-        Ok(Image2D{ buffer: buf })
+        Ok(Image2D { buffer: buf })
+    }
+
+    pub fn into_raw_vec(self) -> Vec<P> {
+        self.buffer.into_raw_vec()
+    }
+
+    pub fn as_slice(&self) -> Option<&[P]> {
+        self.buffer.as_slice()
     }
 
     /// Return the pixel at the specified coordinates.

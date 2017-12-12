@@ -11,7 +11,7 @@ impl<T> Primitive for T
 
 /// This trait must be implemented for the types you want to store in an image.
 pub trait Pixel: Clone + PartialEq {
-    type Subpixel;
+    type Subpixel: Clone;
 
     /// Return the number of channels in the type.
     fn n_channels() -> usize;

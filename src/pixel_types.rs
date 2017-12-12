@@ -1,4 +1,4 @@
-use num_traits::Zero;
+use num_traits::{Zero, One};
 
 use traits::{Primitive, Pixel, PixelOps};
 
@@ -130,6 +130,14 @@ macro_rules! impl_pixels {
 
             fn is_zero(&self) -> bool {
                 self.data.iter().map(|p| p.is_zero()).fold(true, |acc, b| b && acc)
+            }
+        }
+
+        impl<P> One for $name<P>
+            where P: Primitive
+        {
+            fn one() -> $name<P> {
+                $name { data: [<P as One>::one(); $n_channels ] }
             }
         }
 

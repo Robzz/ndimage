@@ -1,5 +1,6 @@
 //! # ndimage - A [ndarray](https://crates.io/crates/ndarray) backed image library.
 
+extern crate byteorder;
 #[macro_use] extern crate failure;
 #[macro_use] extern crate ndarray;
 extern crate num_traits;

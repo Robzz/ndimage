@@ -12,7 +12,7 @@ use rect::Rect;
 use traits::Pixel;
 
 /// 2-dimensional image type.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Image2D<P>
     where P: Pixel
 {
@@ -48,7 +48,7 @@ impl<'a, P> Image2D<P>
     ///
     /// **Error**: `InvalidDimensions` if the dimensions do not match the length of `v`.
     pub fn from_raw_vec(w: u32, h: u32, v: &Vec<P::Subpixel>) -> Result<Image2D<P>, Error> {
-        let pixels_iter = v.chunks(P::n_channels());
+        let pixels_iter = v.chunks(P::N_CHANNELS as usize);
         ensure!(pixels_iter.len() == (w * h) as usize,
                 "Buffer has incorrect size {}, expected {}.", pixels_iter.len(), w * h);
         let mut v_pixels = vec![];
@@ -71,14 +71,14 @@ impl<'a, P> Image2D<P>
     ///
     /// **Panics** if the index is out of bounds.
     pub fn get_pixel(&self, x: u32, y: u32) -> P {
-        self.buffer[[x as usize, y as usize]].clone()
+        self.buffer[[y as usize, x as usize]].clone()
     }
 
     /// Set the pixel at the specified coordinates to the specified value.
     ///
     /// **Panics** if the index is out of bounds.
     pub fn put_pixel(&mut self, x: u32, y: u32, pixel: P) {
-        self.buffer[[x as usize, y as usize]] = pixel;
+        self.buffer[[y as usize, x as usize]] = pixel;
     }
 
     /// Return the width of the image.
@@ -109,7 +109,7 @@ impl<'a, P> Image2D<P>
         let top = rect.top() as isize;
         let right = left + rect.width() as isize;
         let bottom = top + rect.height() as isize;
-        self.buffer.slice(s![left..right, top..bottom]).into_iter()
+        self.buffer.slice(s![top..bottom, left..right]).into_iter()
     }
 
     /// Return a mutable view to a subset of the image of specified dimensions starting at the specified
@@ -121,7 +121,7 @@ impl<'a, P> Image2D<P>
         let top = rect.top() as isize;
         let right = left + rect.width() as isize;
         let bottom = top + rect.height() as isize;
-        self.buffer.slice_mut(s![left..right, top..bottom]).into_iter()
+        self.buffer.slice_mut(s![top..bottom, left..right]).into_iter()
     }
 
     /// Translate the given `Rect` within the image by the given 2D vector. The parts of the
@@ -179,21 +179,23 @@ mod tests {
 
     #[test]
     fn test_from_vec() {
-        let v1 = Vec::from_iter((1u8..10u8).map(|n| Luma::new([n])));
-        let v2 = Vec::from_iter((1u8..7u8).map(|n| Luma::new([n])));
+        let v1 = Vec::from_iter((0u8..9u8).map(|n| Luma::new([n])));
+        let v2 = Vec::from_iter((0u8..6u8).map(|n| Luma::new([n])));
 
-        let i1 = Image2D::from_vec(3, 3, v1.clone());
-        let i2 = Image2D::from_vec(2, 3, v2.clone());
-        let i3 = Image2D::from_vec(3, 2, v2.clone());
-        assert!(i1.is_ok());
-        assert!(i2.is_ok());
-        assert!(i3.is_ok());
-        assert_eq!(i1.unwrap().dimensions(), (3, 3));
-        assert_eq!(i2.unwrap().dimensions(), (2, 3));
-        assert_eq!(i3.unwrap().dimensions(), (3, 2));
+        let i1 = Image2D::from_vec(3, 3, v1.clone()).unwrap();
+        let i2 = Image2D::from_vec(2, 3, v2.clone()).unwrap();
+        let i3 = Image2D::from_vec(3, 2, v2.clone()).unwrap();
+        assert_eq!(i1.dimensions(), (3, 3));
+        assert_eq!(i2.dimensions(), (2, 3));
+        assert_eq!(i3.dimensions(), (3, 2));
 
         assert!(Image2D::from_vec(3, 3, v2.clone()).is_err());
         assert!(Image2D::from_vec(4, 2, v2.clone()).is_err());
+        for y in 0..3 {
+            for x in 0..2 {
+                assert_eq!((x + y * 2) as u8, i2.get_pixel(x, y).data[0]);
+            }
+        }
     }
 
     #[test]
@@ -224,23 +226,23 @@ mod tests {
     #[test]
     fn test_enumerate_pixels() {
         let mut v: Vec<Luma<u8>> = vec![];
-        for x in 0..3 {
-            for y in 0..3 {
+        for y in 0..3 {
+            for x in 0..5 {
                 v.push(Luma::from((2*x + 3*y) as u8));
             }
         }
-        let img = Image2D::from_vec(3, 3, v.clone()).unwrap();
+        let img = Image2D::from_vec(5, 3, v.clone()).unwrap();
 
-        for ((x, y), p) in img.enumerate_pixels().map(|((x, y), p)| ((x, y), p.channels()[0])) {
-            assert!((2*x + 3*y) as u8 == p);
+        for ((x, y), p) in img.enumerate_pixels().map(|((y, x), p)| ((x, y), p.channels()[0])) {
+            assert_eq!((2*x + 3*y) as u8, p);
         }
     }
 
     #[test]
     fn test_rect_iterator() {
-        let v: Vec<Luma<usize>> = (1..10).map(|n| Luma::new([n])).collect();
-        let img = Image2D::from_vec(3, 3, v).unwrap();
-        let subimg1 = img.rect_iterator(&Rect::new(1, 1, 2, 2));
+        let v: Vec<Luma<usize>> = (1..16).map(|n| Luma::new([n])).collect();
+        let img = Image2D::from_vec(5, 3, v).unwrap();
+        let subimg1 = img.rect_iterator(&Rect::new(1, 1, 3, 1));
 
         fn subimg_vec_eq<'a>(subimg: Iter<'a, Luma<usize>>, v: &Vec<usize>) -> bool {
             let v_iter   = v.into_iter();
@@ -250,7 +252,7 @@ mod tests {
             }
         }
 
-        let subimg1_vec: Vec<usize> = vec![5, 6, 8, 9];
+        let subimg1_vec: Vec<usize> = vec![7, 8, 9];
 
         assert!(subimg_vec_eq(subimg1, &subimg1_vec));
     }

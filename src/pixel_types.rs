@@ -1,7 +1,9 @@
 use num_traits::{Zero, One};
+use num_traits::cast::cast;
 
-use traits::{Primitive, Pixel, PixelOps};
+use traits::{Primitive, Pixel, PixelOps, PixelCast};
 
+use std::convert::From;
 use std::ops::{Add, Sub, Mul, Div, Rem, Index};
 
 macro_rules! impl_pixels {
@@ -17,7 +19,6 @@ macro_rules! impl_pixels {
         impl<P> $name<P>
             where P: Primitive
         {
-            /// Create a new $name
             pub fn new(data: [P; $n_channels]) -> $name<P> {
                 $name { data: data }
             }
@@ -164,7 +165,7 @@ macro_rules! impl_pixels {
         {
             type Subpixel = P;
 
-            fn n_channels() -> usize { $n_channels }
+            const N_CHANNELS: u32 = $n_channels;
 
             fn channels(&self) -> &[P] { &self.data }
 
@@ -183,11 +184,38 @@ macro_rules! impl_pixels {
                     self.data[i] = s[i];
                 }
             }
+
+            fn map<F>(&self, f: F) -> Self
+                where F: Fn(Self::Subpixel) -> Self::Subpixel
+            {
+                let mut p = <Self as Zero>::zero();
+                for (dst, src) in p.channels_mut().into_iter().zip(self.data.into_iter()) {
+                    *dst = f(*src);
+                }
+                p
+            }
         }
 
         impl<P> PixelOps for $name<P>
             where P: Primitive
         { }
+
+        impl<S, O> PixelCast<$name<O>, S, O> for $name<S>
+            where O: Primitive,
+                  S: Primitive
+        {
+            fn cast_from(&mut self, other: &$name<O>) {
+                for (src, dst) in other.channels().into_iter().zip(self.channels_mut().into_iter()) {
+                    *dst = cast::<O, S>(src.clone()).unwrap_or(<S as Zero>::zero());
+                }
+            }
+
+            fn cast_to(&self, other: &mut $name<O>) {
+                for (dst, src) in other.channels_mut().into_iter().zip(self.channels().into_iter()) {
+                    *dst = cast::<S, O>(src.clone()).unwrap_or(<O as Zero>::zero());
+                }
+            }
+        }
     )+}
 }
 

@@ -9,6 +9,7 @@ extern crate png;
 //pub mod dynamic_image;
 pub mod image2d;
 pub mod io;
+pub mod kernel;
 pub mod rect;
 pub mod traits;
 mod pixel_types;

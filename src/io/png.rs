@@ -218,7 +218,7 @@ impl<'a, W, P> PngEncoder8<'a, W, P>
     pub fn new(image: &'a Image2D<P>, out: W) -> Result<PngEncoder8<'a, W, P>, Error>
     {
         let mut enc = Encoder::new(out, image.width(), image.height());
-        enc.set(BitDepth::Eight).set(match P::n_channels() {
+        enc.set(BitDepth::Eight).set(match P::N_CHANNELS {
             1 => ColorType::Grayscale,
             3 => ColorType::RGB,
             _ => return Err(PngEncodingError::UnsupportedType().into())
@@ -230,7 +230,7 @@ impl<'a, W, P> PngEncoder8<'a, W, P>
     pub fn write(self) -> Result<(), Error> {
         // TODO: be more gracious
         let buffer = try!(self.img.as_slice().ok_or(PngEncodingError::Internal));
-        let mut u8_buffer = Vec::with_capacity((self.img.width() * self.img.height()) as usize * P::n_channels());
+        let mut u8_buffer = Vec::with_capacity((self.img.width() * self.img.height() * P::N_CHANNELS) as usize);
         for pix in buffer {
             u8_buffer.extend_from_slice(pix.channels());
         }
@@ -248,7 +248,7 @@ impl<'a, W, P> PngEncoder16<'a, W, P>
     pub fn new(image: &'a Image2D<P>, out: W) -> Result<PngEncoder16<'a, W, P>, Error>
     {
         let mut enc = Encoder::new(out, image.width(), image.height());
-        enc.set(BitDepth::Sixteen).set(match P::n_channels() {
+        enc.set(BitDepth::Sixteen).set(match P::N_CHANNELS {
             1 => ColorType::Grayscale,
             3 => ColorType::RGB,
             _ => return Err(PngEncodingError::UnsupportedType().into())
@@ -260,7 +260,7 @@ impl<'a, W, P> PngEncoder16<'a, W, P>
     pub fn write(self) -> Result<(), Error> {
         // TODO: be more gracious
         let buffer = try!(self.img.as_slice().ok_or(PngEncodingError::Internal));
-        let mut u16_buffer = Vec::with_capacity((self.img.width() * self.img.height()) as usize * P::n_channels());
+        let mut u16_buffer = Vec::with_capacity((self.img.width() * self.img.height() * P::N_CHANNELS) as usize);
         for pix in buffer {
             u16_buffer.extend_from_slice(pix.channels());
         }
@@ -291,7 +291,7 @@ mod tests {
         for y in 0..32 {
             for x in 0..32 {
                 let n = <S as NumCast>::from::<u32>(x + y).unwrap();
-                let pix = vec![n; P::n_channels()];
+                let pix = vec![n; P::N_CHANNELS as usize];
                 img.put_pixel(x, y, P::from_slice(&pix));
             }
         }

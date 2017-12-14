@@ -1,9 +1,10 @@
 use image2d::Image2D;
+use helper::generic::f64_to_float;
+use math;
 use rect::Rect;
 use traits::{Pixel, Primitive};
 
 use failure::Error;
-use std::f64::consts::PI;
 use num_traits::{NumCast, Zero, Float};
 
 use std::ops::Add;
@@ -63,20 +64,27 @@ impl<T> Kernel<T> where T: Primitive {
     }
 }
 
+impl<T> Kernel<T> where T: Primitive + Float {
 /// Return a gaussian kernel
-pub fn gaussian<T>(sigma: T, radius: u32) -> Kernel<T>
-    where T: Primitive + Float
-{
-    let d = 2 * radius + 1;
-    let n = d * d;
-    let mut v = Vec::with_capacity(n as usize);
-    let sigma2 = <f64 as NumCast>::from::<T>(sigma * sigma).unwrap();
-    for y in -(radius as i64)..(radius + 1) as i64 {
-        for x in -(radius as i64)..(radius + 1) as i64 {
-            v.push(<T as NumCast>::from::<f64>(1. / (2. * PI * sigma2) * (-(x*x + y*y) as f64 / (2. * sigma2)).exp()).unwrap());
+    pub fn gaussian(sigma: T, radius: u32) -> Kernel<T> {
+        let d = 2 * radius + 1;
+        let n = d * d;
+        let mut v = Vec::with_capacity(n as usize);
+        for y in -(radius as i64)..(radius + 1) as i64 {
+            for x in -(radius as i64)..(radius + 1) as i64 {
+                v.push(math::gaussian_2d(f64_to_float::<T>(x as f64), f64_to_float::<T>(y as f64), sigma));
+            }
         }
+        Kernel::new(v, radius).unwrap()
     }
-    Kernel::new(v, radius).unwrap()
+
+    /// Return a box kernel
+    pub fn box_(radius: u32) -> Kernel<T> {
+        let d = 2 * radius + 1;
+        let n = d * d;
+        let v = vec![f64_to_float::<T>(1. / n as f64); n as usize];
+        Kernel::new(v, radius).unwrap()
+    }
 }
 
 #[cfg(test)]

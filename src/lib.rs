@@ -12,6 +12,8 @@ pub mod io;
 pub mod kernel;
 pub mod rect;
 pub mod traits;
+mod helper;
+mod math;
 mod pixel_types;
 
 pub use image2d::Image2D;

@@ -1,6 +1,6 @@
 extern crate ndimage;
 
-use ndimage::kernel::{Kernel, gaussian};
+use ndimage::kernel::Kernel;
 use ndimage::io::png::{PngDecoder, PngEncoder8};
 
 use std::env::{args, current_dir};
@@ -19,8 +19,8 @@ fn main() {
     let decoder = PngDecoder::new(&in_file).unwrap();
     let img = decoder.read_rgb_u8().unwrap();
 
-    let box_kernel = Kernel::new(vec![1. / 169.; 169], 6).unwrap();
-    let gaussian_kernel = gaussian(3., 6);
+    let box_kernel = Kernel::<f64>::box_(6);
+    let gaussian_kernel = Kernel::gaussian(3., 6);
     let box_img = box_kernel.convolve(&img);
     let gaussian_img = gaussian_kernel.convolve(&img);
 

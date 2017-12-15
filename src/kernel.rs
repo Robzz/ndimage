@@ -56,7 +56,7 @@ impl<T> Kernel<T> where T: Primitive {
             }
             region_accu.clear();
             for i in 0usize..n_channels as usize {
-                pix_accu_s[i] = <S as NumCast>::from::<T>(pix_accu_t[i]).unwrap_or(<S as Zero>::zero());
+                pix_accu_s[i] = <S as NumCast>::from::<T>(pix_accu_t[i]).unwrap_or_else(<S as Zero>::zero);
             }
             *dst_pix = P::from_slice(&pix_accu_s);
         }
@@ -70,8 +70,9 @@ impl<T> Kernel<T> where T: Primitive + Float {
         let d = 2 * radius + 1;
         let n = d * d;
         let mut v = Vec::with_capacity(n as usize);
-        for y in -(radius as i64)..(radius + 1) as i64 {
-            for x in -(radius as i64)..(radius + 1) as i64 {
+        let r = <i64 as From<u32>>::from(radius + 1);
+        for y in -r..r {
+            for x in -r..r {
                 v.push(math::gaussian_2d(f64_to_float::<T>(x as f64), f64_to_float::<T>(y as f64), sigma));
             }
         }
@@ -82,7 +83,7 @@ impl<T> Kernel<T> where T: Primitive + Float {
     pub fn box_(radius: u32) -> Kernel<T> {
         let d = 2 * radius + 1;
         let n = d * d;
-        let v = vec![f64_to_float::<T>(1. / n as f64); n as usize];
+        let v = vec![f64_to_float::<T>(1. / <f64 as From<u32>>::from(n)); n as usize];
         Kernel::new(v, radius).unwrap()
     }
 }

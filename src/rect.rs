@@ -67,13 +67,11 @@ impl Rect {
         let top = max(self.top(), other.top());
         let right = min(self.right(), other.right());
         let bottom = min(self.bottom(), other.bottom());
-        match left <= right && top <= bottom {
-            true => {
-                let (w, h) = (right - left + 1, bottom - top + 1);
-                Some(Rect::new(left, top, w, h))
-            },
-            false => None
+        if left <= right && top <= bottom {
+            let (w, h) = (right - left + 1, bottom - top + 1);
+            Some(Rect::new(left, top, w, h))
         }
+        else { None }
     }
 
     /// Crop the `Rect` to the biggest sub-`Rect` that can fit `img` if it exists, `None`

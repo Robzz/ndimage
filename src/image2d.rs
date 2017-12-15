@@ -47,7 +47,7 @@ impl<'a, P> Image2D<P>
     /// subpixel.
     ///
     /// **Error**: `InvalidDimensions` if the dimensions do not match the length of `v`.
-    pub fn from_raw_vec(w: u32, h: u32, v: &Vec<P::Subpixel>) -> Result<Image2D<P>, Error> {
+    pub fn from_raw_vec(w: u32, h: u32, v: &[P::Subpixel]) -> Result<Image2D<P>, Error> {
         let pixels_iter = v.chunks(P::N_CHANNELS as usize);
         ensure!(pixels_iter.len() == (w * h) as usize,
                 "Buffer has incorrect size {}, expected {}.", pixels_iter.len(), w * h);
@@ -128,22 +128,20 @@ impl<'a, P> Image2D<P>
     /// original `Rect` than fall out of the iamge will be cropped. Return the translated `Rect` if
     /// it's not empty, or `None` otherwise.
     pub fn translate_rect(&self, rect: &Rect, x: i64, y: i64) -> Option<Rect> {
-        let left = (rect.left() as i64) + x;
-        let top = (rect.top() as i64) + y;
-        let right = (rect.right() as i64) + x;
-        let bottom = (rect.bottom() as i64) + y;
-        let (w_signed, h_signed) = (self.width() as i64, self.height() as i64);
+        let left = i64::from(rect.left()) + x;
+        let top = i64::from(rect.top()) + y;
+        let right = i64::from(rect.right()) + x;
+        let bottom = i64::from(rect.bottom()) + y;
+        let (w_signed, h_signed) = (i64::from(self.width()), i64::from(self.height()));
 
         // Detect early if the resulting rectangle falls out of the image
-        match left < w_signed && top < h_signed && right >= 0 && bottom >= 0 {
-            true => {
-                // Compute the new Rect
-                let x_left = if left < 0 { 0 } else { left as u32 };
-                let y_top = if top < 0 { 0 } else { top as u32 };
-                Some(Rect::new(x_left, y_top, (min(w_signed, right + 1) as u32) - x_left, (min(h_signed, bottom + 1) as u32) - y_top))
-            },
-            false => None
+        if left < w_signed && top < h_signed && right >= 0 && bottom >= 0 {
+            // Compute the new Rect
+            let x_left = if left < 0 { 0 } else { left as u32 };
+            let y_top = if top < 0 { 0 } else { top as u32 };
+            Some(Rect::new(x_left, y_top, (min(w_signed, right + 1) as u32) - x_left, (min(h_signed, bottom + 1) as u32) - y_top))
         }
+        else { None }
     }
 }
 

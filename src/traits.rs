@@ -38,7 +38,7 @@ pub trait Pixel: Clone + PartialEq {
     fn map<F>(&self, f: F) -> Self
         where F: Fn(Self::Subpixel) -> Self::Subpixel;
 
-    fn sum<'a>(&'a self) -> Self::Subpixel
+    fn sum(&self) -> Self::Subpixel
         where Self::Subpixel: Primitive
     {
         self.channels().iter().fold(Self::Subpixel::zero(), |s1, s2| s1 + *s2)

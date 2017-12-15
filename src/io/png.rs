@@ -82,7 +82,7 @@ impl<R> PngDecoder<R> where R: Read {
         let mut dec = Decoder::new(buffer);
         let trans = Transformations::empty();
         dec.set(trans);
-        let (info, reader) = try!(dec.read_info().map_err(|e| PngDecodingError::Decoder(e)));
+        let (info, reader) = try!(dec.read_info().map_err(PngDecodingError::Decoder));
         let channels = match info.color_type {
             ColorType::RGB => ImageChannels::RGB,
             ColorType::Grayscale => ImageChannels::Luma,

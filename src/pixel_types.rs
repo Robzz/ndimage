@@ -31,8 +31,8 @@ macro_rules! impl_pixels {
 
             fn add(self, rhs: $name<P>) -> $name<P> {
                 let mut data = [<P as Zero>::zero(); $n_channels];
-                for i in 0..$n_channels {
-                    data[i] = self.data[i] + rhs.data[i];
+                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
+                    *n = *s + *r;
                 }
                 $name { data: data }
             }
@@ -45,8 +45,8 @@ macro_rules! impl_pixels {
 
             fn sub(self, rhs: $name<P>) -> $name<P> {
                 let mut data = [<P as Zero>::zero(); $n_channels];
-                for i in 0..$n_channels {
-                    data[i] = self.data[i] - rhs.data[i];
+                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
+                    *n = *s - *r;
                 }
                 $name { data: data }
             }
@@ -59,8 +59,8 @@ macro_rules! impl_pixels {
 
             fn sub(self, rhs: &'b $name<P>) -> $name<P> {
                 let mut data = [<P as Zero>::zero(); $n_channels];
-                for i in 0..$n_channels {
-                    data[i] = self.data[i] - rhs.data[i];
+                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
+                    *n = *s - *r;
                 }
                 $name { data: data }
             }
@@ -73,8 +73,8 @@ macro_rules! impl_pixels {
 
             fn mul(self, rhs: $name<P>) -> $name<P> {
                 let mut data = [<P as Zero>::zero(); $n_channels];
-                for i in 0..$n_channels {
-                    data[i] = self.data[i] * rhs.data[i];
+                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
+                    *n = *s * *r;
                 }
                 $name { data: data }
             }
@@ -101,8 +101,8 @@ macro_rules! impl_pixels {
 
             fn div(self, rhs: $name<P>) -> $name<P> {
                 let mut data = [<P as Zero>::zero(); $n_channels];
-                for i in 0..$n_channels {
-                    data[i] = self.data[i] / rhs.data[i];
+                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
+                    *n = *s / *r;
                 }
                 $name { data: data }
             }
@@ -115,8 +115,8 @@ macro_rules! impl_pixels {
 
             fn rem(self, rhs: $name<P>) -> $name<P> {
                 let mut data = [<P as Zero>::zero(); $n_channels];
-                for i in 0..$n_channels {
-                    data[i] = self.data[i] % rhs.data[i];
+                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
+                    *n = *s % *r;
                 }
                 $name { data: data }
             }
@@ -173,15 +173,15 @@ macro_rules! impl_pixels {
 
             fn from_slice(s: &[Self::Subpixel]) -> $name<P> {
                 let mut p = $name::zero();
-                for i in 0..$n_channels {
-                    p.data[i] = s[i];
+                for (n, e) in p.data.iter_mut().zip(s.iter()) {
+                    *n = *e;
                 }
                 p
             }
 
             fn set_to_slice(&mut self, s: &[Self::Subpixel]) {
-                for i in 0..$n_channels {
-                    self.data[i] = s[i];
+                for (n, e) in self.data.iter_mut().zip(s.iter()) {
+                    *n = *e;
                 }
             }
 

@@ -70,9 +70,9 @@ impl<T> Kernel<T> where T: Primitive + Float {
         let d = 2 * radius + 1;
         let n = d * d;
         let mut v = Vec::with_capacity(n as usize);
-        let r = <i64 as From<u32>>::from(radius + 1);
-        for y in -r..r {
-            for x in -r..r {
+        let r = <i64 as From<u32>>::from(radius);
+        for y in -r..r+1 {
+            for x in -r..r+1 {
                 v.push(math::gaussian_2d(f64_to_float::<T>(x as f64), f64_to_float::<T>(y as f64), sigma));
             }
         }

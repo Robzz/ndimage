@@ -12,7 +12,7 @@ impl<T> Primitive for T
 
 /// This trait must be implemented for the types you want to store in an image.
 pub trait Pixel: Clone + PartialEq {
-    type Subpixel: Clone;
+    type Subpixel: Primitive;
 
     /// Number of channels contained in the pixel type
     const N_CHANNELS: u32;
@@ -66,8 +66,8 @@ pub trait PixelOpsRef: PixelOps + NumRef { }
 /// you should probably do the same.
 pub trait PixelCast<P, S, O>: Pixel<Subpixel=S>
     where P: Pixel<Subpixel=O>,
-          O: NumCast + Clone,
-          S: NumCast + Clone
+          O: Primitive,
+          S: Primitive
 {
     /// Cast `other` into Self and assign the value to self.
     fn cast_from(&mut self, other: &P);

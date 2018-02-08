@@ -12,6 +12,7 @@ pub mod io;
 pub mod kernel;
 pub mod rect;
 pub mod traits;
+pub mod processing;
 mod helper;
 mod math;
 mod pixel_types;

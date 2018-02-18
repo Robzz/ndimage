@@ -8,8 +8,9 @@ use num_traits::{Zero};
 use std::cmp::min;
 use std::iter::{IntoIterator};
 
+use pixel_types::{Luma, LumaA, Rgb, RgbA};
 use rect::Rect;
-use traits::Pixel;
+use traits::{Pixel, Primitive};
 
 /// 2-dimensional image type.
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -198,6 +199,28 @@ impl<'a, P> IntoIterator for &'a mut Image2D<P>
     fn into_iter(self) -> Self::IntoIter {
         self.buffer.iter_mut()
     }
+}
+
+/// Discard the alpha component of an RgbA image.
+pub fn rgba_to_rgb<P>(img: &Image2D<RgbA<P>>) -> Image2D<Rgb<P>>
+    where P: Primitive
+{
+    let mut res = Image2D::<Rgb<P>>::new(img.width(), img.height());
+    for (src_pixel, dst_pixel) in img.into_iter().zip((&mut res).into_iter()) {
+        *dst_pixel = src_pixel.into();
+    }
+    res
+}
+
+/// Discard the alpha component of a LumaA image.
+pub fn luma_alpha_to_luma<P>(img: &Image2D<LumaA<P>>) -> Image2D<Luma<P>>
+    where P: Primitive
+{
+    let mut res = Image2D::<Luma<P>>::new(img.width(), img.height());
+    for (src_pixel, dst_pixel) in img.into_iter().zip((&mut res).into_iter()) {
+        *dst_pixel = src_pixel.into();
+    }
+    res
 }
 
 #[cfg(test)]

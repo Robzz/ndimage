@@ -226,6 +226,38 @@ impl_pixels!(
     RgbA, 4
 );
 
+impl<P> From<LumaA<P>> for Luma<P>
+    where P: Primitive
+{
+    fn from(pixel: LumaA<P>) -> Luma<P> {
+        Luma { data: [pixel.data[0]] }
+    }
+}
+
+impl<'a, P> From<&'a LumaA<P>> for Luma<P>
+    where P: Primitive
+{
+    fn from(pixel: &'a LumaA<P>) -> Luma<P> {
+        Luma { data: [pixel.data[0]] }
+    }
+}
+
+impl<P> From<RgbA<P>> for Rgb<P>
+    where P: Primitive
+{
+    fn from(pixel: RgbA<P>) -> Rgb<P> {
+        Rgb { data: [pixel.data[0], pixel.data[1], pixel.data[2]] }
+    }
+}
+
+impl<'a, P> From<&'a RgbA<P>> for Rgb<P>
+    where P: Primitive
+{
+    fn from(pixel: &'a RgbA<P>) -> Rgb<P> {
+        Rgb { data: [pixel.data[0], pixel.data[1], pixel.data[2]] }
+    }
+}
+
 impl<P> From<P> for Luma<P>
     where P: Primitive
 {

@@ -65,7 +65,8 @@ pub fn equalize_histogram<P>(img: &Image2D<P>) -> Image2D<P> where P: HistogramP
     let h: Histogram = img.into();
     let cumul = h.cumulative();
     let m = *cumul.bins().into_iter().max().unwrap();
-    let transfer = cumul.bins().into_iter().map(|val| ((*val as f64 * 255.) / (m as f64)) as u8).collect::<Vec<u8>>();
+    let transfer = cumul.bins().into_iter().map(|val| ((Into::<f64>::into(*val) * 255.) / (Into::<f64>::into(m))) as u8)
+                        .collect::<Vec<u8>>();
     let mut equalized = img.clone();
     for pix in &mut equalized {
         let idx = <u8 as NumCast>::from::<P::Subpixel>(pix.channels()[0]).unwrap();

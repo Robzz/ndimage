@@ -150,7 +150,7 @@ impl<'a, P> Image2D<P>
     }
 
     /// Fill the given `Rect` with the given value.
-    pub fn fill_rect(&'a mut self, rect: &Rect, value: P) {
+    pub fn fill_rect(&'a mut self, rect: &Rect, value: &P) {
         for pixel in self.rect_iterator_mut(rect) {
             *pixel = value.clone();
         }
@@ -167,7 +167,7 @@ impl<'a, P> Image2D<P>
         if !src_rect.fits_image(img) {
             bail!("Source rect does not fit source image.");
         }
-        if !dst_rect.fits_image(&self) {
+        if !dst_rect.fits_image(self) {
             bail!("Source rect does not fit destination image.");
         }
 
@@ -307,7 +307,7 @@ mod tests {
 
         let mut img: Image2D<Luma<u8>> = Image2D::new(5, 5);
         let r = Rect::new(1, 1, 3, 3);
-        img.fill_rect(&r, Luma::<u8>::new([255]));
+        img.fill_rect(&r, &Luma::<u8>::new([255]));
         for ((x, y), &pixel) in img.enumerate_pixels() {
             if r.contains(x as u32, y as u32) {
                 assert_eq!(pixel, Luma::<u8>::new([255]));
@@ -323,7 +323,7 @@ mod tests {
         let mut img1 = Image2D::<Luma<u8>>::new(64, 64);
         let mut img2 = Image2D::<Luma<u8>>::new(64, 64);
         let r = Rect::new(16, 16, 32, 32);
-        img2.fill_rect(&r, Luma::<u8>::new([255]));
+        img2.fill_rect(&r, &Luma::<u8>::new([255]));
         assert!(img1.blit_rect(&r, &r, &img2).is_ok());
         assert_eq!(img1, img2);
     }

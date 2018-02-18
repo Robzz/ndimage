@@ -221,7 +221,9 @@ macro_rules! impl_pixels {
 
 impl_pixels!(
     Luma, 1;
-    Rgb, 3
+    LumaA, 2;
+    Rgb, 3;
+    RgbA, 4
 );
 
 impl<P> From<P> for Luma<P>

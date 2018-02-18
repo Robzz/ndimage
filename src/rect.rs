@@ -74,14 +74,14 @@ impl Rect {
         else { None }
     }
 
+    /// Test whether the Rect fits in the given image.
     pub fn fits_image<P>(&self, img: &Image2D<P>) -> bool
         where P: Pixel
     {
         self.right() < img.width() && self.bottom() < img.height()
     }
 
-    /// Crop the `Rect` to the biggest sub-`Rect` that can fit `img` if it exists, `None`
-    /// otherwise.
+    /// Crop the `Rect` to the biggest sub-`Rect` that can fit `img` if it exists, `None` otherwise.
     pub fn crop_to_image<P>(&self, img: &Image2D<P>) -> Option<Rect>
         where P: Pixel
     {

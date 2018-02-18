@@ -13,9 +13,9 @@ pub mod kernel;
 pub mod rect;
 pub mod traits;
 pub mod processing;
+pub mod pixel_types;
 mod helper;
 mod math;
-mod pixel_types;
 
 pub use image2d::Image2D;
 pub use traits::{Pixel, PixelOps, Primitive};

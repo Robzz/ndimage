@@ -155,6 +155,27 @@ impl<'a, P> Image2D<P>
             *pixel = value.clone();
         }
     }
+
+    /// Blit (i.e. copy) a `Rect` from the source image onto the destination image.
+    pub fn blit_rect(&'a mut self, src_rect: &Rect, dst_rect: &Rect, img: &Image2D<P>) -> Result<(), Error> {
+        if src_rect.size() != dst_rect.size() {
+            let (ws, hs) = src_rect.size();
+            let (wd, hd) = dst_rect.size();
+            bail!("Rects are not the same size. Source is ({}, {}), destination is ({}, {})", ws, hs, wd, hd);
+        }
+
+        if !src_rect.fits_image(img) {
+            bail!("Source rect does not fit source image.");
+        }
+        if !dst_rect.fits_image(&self) {
+            bail!("Source rect does not fit destination image.");
+        }
+
+        for (src_pixel, dst_pixel) in img.rect_iterator(src_rect).zip(self.rect_iterator_mut(dst_rect)) {
+            *dst_pixel = src_pixel.clone();
+        }
+        Ok(())
+    }
 }
 
 impl<'a, P> IntoIterator for &'a Image2D<P>
@@ -295,5 +316,15 @@ mod tests {
                 assert_eq!(pixel, Luma::<u8>::new([0]));
             }
         }
+    }
+
+    #[test]
+    fn test_blit_rect() {
+        let mut img1 = Image2D::<Luma<u8>>::new(64, 64);
+        let mut img2 = Image2D::<Luma<u8>>::new(64, 64);
+        let r = Rect::new(16, 16, 32, 32);
+        img2.fill_rect(&r, Luma::<u8>::new([255]));
+        assert!(img1.blit_rect(&r, &r, &img2).is_ok());
+        assert_eq!(img1, img2);
     }
 }

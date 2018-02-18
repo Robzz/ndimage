@@ -90,9 +90,4 @@ impl<T> Kernel<T> where T: Primitive + Float {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    #[test]
-    fn test_box_filter() {
-    }
 }

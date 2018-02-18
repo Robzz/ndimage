@@ -74,6 +74,12 @@ impl Rect {
         else { None }
     }
 
+    pub fn fits_image<P>(&self, img: &Image2D<P>) -> bool
+        where P: Pixel
+    {
+        self.right() < img.width() && self.bottom() < img.height()
+    }
+
     /// Crop the `Rect` to the biggest sub-`Rect` that can fit `img` if it exists, `None`
     /// otherwise.
     pub fn crop_to_image<P>(&self, img: &Image2D<P>) -> Option<Rect>
@@ -137,5 +143,23 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_fits_image() {
+        let r1 = Rect::new(10, 10, 32, 32);
+        let r2 = Rect::new(10, 10, 64, 64);
+        let r3 = Rect::new(0, 0, 64, 64);
+        let r4 = Rect::new(0, 0, 65, 65);
+        let r5 = Rect::new(10, 10, 54, 54);
+        let r6 = Rect::new(10, 10, 55, 55);
+
+        let img = Image2D::<Luma<u8>>::new(64, 64);
+        assert!(r1.fits_image(&img));
+        assert!(r3.fits_image(&img));
+        assert!(r5.fits_image(&img));
+        assert!(!r2.fits_image(&img));
+        assert!(!r4.fits_image(&img));
+        assert!(!r6.fits_image(&img));
     }
 }

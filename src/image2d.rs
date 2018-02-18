@@ -100,6 +100,11 @@ impl<'a, P> Image2D<P>
         self.buffer.indexed_iter_mut()
     }
 
+    /// Fill the image with the given value
+    pub fn fill(&'a mut self, value: P) {
+        self.buffer.fill(value);
+    }
+
     /// Return an iterator on a subset of the image of specified dimensions starting at the specified
     /// coordinates.
     ///
@@ -142,6 +147,13 @@ impl<'a, P> Image2D<P>
             Some(Rect::new(x_left, y_top, (min(w_signed, right + 1) as u32) - x_left, (min(h_signed, bottom + 1) as u32) - y_top))
         }
         else { None }
+    }
+
+    /// Fill the given `Rect` with the given value.
+    pub fn fill_rect(&'a mut self, rect: &Rect, value: P) {
+        for pixel in self.rect_iterator_mut(rect) {
+            *pixel = value.clone();
+        }
     }
 }
 
@@ -266,5 +278,22 @@ mod tests {
         assert_eq!(img.translate_rect(&r2,  2,  2), Some(Rect::new(3, 3, 2, 2)));
         assert_eq!(img.translate_rect(&r2,  0,  0), Some(Rect::new(1, 1, 4, 4)));
         assert_eq!(img.translate_rect(&r1,  4,  4), None);
+    }
+
+    #[test]
+    fn test_fill_rect() {
+        use traits::Region;
+
+        let mut img: Image2D<Luma<u8>> = Image2D::new(5, 5);
+        let r = Rect::new(1, 1, 3, 3);
+        img.fill_rect(&r, Luma::<u8>::new([255]));
+        for ((x, y), &pixel) in img.enumerate_pixels() {
+            if r.contains(x as u32, y as u32) {
+                assert_eq!(pixel, Luma::<u8>::new([255]));
+            }
+            else {
+                assert_eq!(pixel, Luma::<u8>::new([0]));
+            }
+        }
     }
 }

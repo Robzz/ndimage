@@ -86,7 +86,7 @@ impl Rect {
 
 impl Region for Rect {
     fn contains(&self, x: u32, y: u32) -> bool {
-        x >= self.left() && y > self.top() && x <= self.right() && y <= self.bottom()
+        x >= self.left() && y >= self.top() && x <= self.right() && y <= self.bottom()
     }
 }
 
@@ -122,5 +122,20 @@ mod tests {
         let img: Image2D<Luma<u8>> = Image2D::new(800, 600);
         assert_eq!(r1.crop_to_image(&img), Some(Rect::new(500, 500, 300, 100)));
         assert_eq!(r2.crop_to_image(&img), None);
+    }
+
+    #[test]
+    fn test_contains() {
+        let r1 = Rect::new(500, 500, 500, 500);
+        for y in 0..1500 {
+            for x in 0..1500 {
+                if x >= 500 && x < 1000 && y >= 500 && y < 1000 {
+                    assert_eq!(r1.contains(x, y), true);
+                }
+                else {
+                    assert_eq!(r1.contains(x, y), false);
+                }
+            }
+        }
     }
 }

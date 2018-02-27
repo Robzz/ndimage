@@ -1,4 +1,5 @@
 //! # ndimage - A [ndarray](https://crates.io/crates/ndarray) backed image library.
+#![deny(missing_docs)]
 
 extern crate byteorder;
 #[macro_use] extern crate failure;
@@ -6,7 +7,6 @@ extern crate byteorder;
 extern crate num_traits;
 extern crate png;
 
-//pub mod dynamic_image;
 pub mod image2d;
 pub mod io;
 pub mod kernel;

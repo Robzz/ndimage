@@ -17,6 +17,7 @@ pub struct Rect {
 impl Rect {
     /// Create a new `Rect`
     pub fn new(x: u32, y: u32, w: u32, h: u32) -> Rect {
+        // TODO: Result
         assert!(w != 0 && h != 0, "Rect dimensions must be strictly positive.");
         Rect { left: x, top: y, width: w, height: h }
     }
@@ -100,6 +101,8 @@ impl Region for Rect {
 mod tests {
     use super::*;
 
+    use image2d::ImageBuffer2D;
+
     use ::Luma;
 
     #[test]
@@ -125,7 +128,7 @@ mod tests {
     fn test_crop_to_image() {
         let r1 = Rect::new(500, 500, 500, 500);
         let r2 = Rect::new(1000, 1000, 500, 500);
-        let img: Image2D<Luma<u8>> = Image2D::new(800, 600);
+        let img: ImageBuffer2D<Luma<u8>> = ImageBuffer2D::new(800, 600);
         assert_eq!(r1.crop_to_image(&img), Some(Rect::new(500, 500, 300, 100)));
         assert_eq!(r2.crop_to_image(&img), None);
     }
@@ -154,7 +157,7 @@ mod tests {
         let r5 = Rect::new(10, 10, 54, 54);
         let r6 = Rect::new(10, 10, 55, 55);
 
-        let img = Image2D::<Luma<u8>>::new(64, 64);
+        let img: ImageBuffer2D<Luma<u8>> = ImageBuffer2D::new(64, 64);
         assert!(r1.fits_image(&img));
         assert!(r3.fits_image(&img));
         assert!(r5.fits_image(&img));

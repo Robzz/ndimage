@@ -1,4 +1,6 @@
-use image2d::Image2D;
+//! Contains the definitions of the image kernel type and the convolution operation.
+
+use image2d::{Image2D, Image2DMut, ImageBuffer2D};
 use helper::generic::f64_to_float;
 use math;
 use rect::Rect;
@@ -25,18 +27,18 @@ impl<T> Kernel<T> where T: Primitive {
         s *= s;
         ensure!(elems.len() == s as usize, "Vector has an incorrect size: {} (expected {})", elems.len(), s);
 
-        Ok(Kernel { elems: elems, radius: radius })
+        Ok(Kernel { elems, radius })
     }
 
     /// Convolve an image with the kernel. Uses zero-padding for borders.
-    pub fn convolve<P, S>(&self, img: &Image2D<P>) -> Image2D<P>
+    pub fn convolve<P, S>(&self, img: &Image2D<P>) -> ImageBuffer2D<P>
         where P: Pixel<Subpixel=S> + Zero + Add,
               S: Primitive
     {
         let d = 2 * self.radius + 1;
         let n_elems = d * d;
         let n_channels = <P as Pixel>::N_CHANNELS;
-        let mut out = img.clone();
+        let mut out = img.to_owned();
         let mut region_accu = Vec::with_capacity((n_elems * n_channels) as usize);
         let mut pix_accu_t = vec![<T as Zero>::zero(); n_channels as usize];
         let mut pix_accu_s = vec![<S as Zero>::zero(); n_channels as usize];
@@ -50,12 +52,12 @@ impl<T> Kernel<T> where T: Primitive {
             }
             pix_accu_t.as_mut_slice().into_iter().map(|c| *c = <T as Zero>::zero()).count();
             for convolved_pix in region_accu.as_slice().chunks(n_channels as usize) {
-                for i in 0usize..n_channels as usize {
+                for i in 0_usize..n_channels as usize {
                     pix_accu_t[i] += convolved_pix[i];
                 }
             }
             region_accu.clear();
-            for i in 0usize..n_channels as usize {
+            for i in 0_usize..n_channels as usize {
                 pix_accu_s[i] = <S as NumCast>::from::<T>(pix_accu_t[i]).unwrap_or_else(<S as Zero>::zero);
             }
             *dst_pix = P::from_slice(&pix_accu_s);

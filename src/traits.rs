@@ -4,17 +4,18 @@ use num_traits::{NumRef, RefNum, NumCast, NumOps, Zero, NumAssign};
 use std::fmt::{Debug, Display};
 
 /// Implemented for primitive pixel types.
-pub trait Primitive: Copy + Clone + Debug + Display + NumAssign + RefNum<Self> + NumCast + PartialOrd { }
+pub trait Primitive: Copy + Clone + Debug + Display + NumAssign + RefNum<Self> + NumCast + PartialOrd + Sync + Send{ }
 
 impl<T> Primitive for T
-    where T: Copy + Clone + Debug + Display + NumAssign + RefNum<T> + NumCast + PartialOrd
+    where T: Copy + Clone + Debug + Display + NumAssign + RefNum<T> + NumCast + PartialOrd + Sync + Send
 {}
 
 /// This trait must be implemented for the types you want to store in an image.
-pub trait Pixel: Clone + PartialEq {
+pub trait Pixel: Clone + PartialEq + Sync + Send {
+    /// Type of an individual pixel component.
     type Subpixel: Primitive;
 
-    /// Number of channels contained in the pixel type
+    /// Number of channels contained in the pixel type.
     const N_CHANNELS: u32;
 
     /// Return a slice containing the different channels of the pixel.
@@ -35,9 +36,11 @@ pub trait Pixel: Clone + PartialEq {
     /// is less than the number of channels in the pixel.
     fn set_to_slice(&mut self, s: &[Self::Subpixel]);
 
+    /// Compute a new Pixel by applying an operation to each individual pixel component.
     fn map<F>(&self, f: F) -> Self
         where F: Fn(Self::Subpixel) -> Self::Subpixel;
 
+    /// Compute the sum of the pixel components.
     fn sum(&self) -> Self::Subpixel
         where Self::Subpixel: Primitive
     {

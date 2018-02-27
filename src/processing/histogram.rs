@@ -1,4 +1,6 @@
-use image2d::Image2D;
+//! Contains the definitions of the Histogram type and Histogram equalization functions.
+
+use image2d::{Image2D, ImageBuffer2D};
 use pixel_types::Luma;
 use traits::{Pixel};
 
@@ -7,9 +9,9 @@ use num_traits::{Zero, NumCast};
 use std::convert::{From, Into};
 
 /// Trait implemented for pixel types for which histogram computation is implemented.
-pub trait HistogramPixel: Pixel + Zero { }
-impl HistogramPixel for Luma<u8> { }
-impl HistogramPixel for Luma<i8> { }
+pub trait HistPixel: Pixel + Zero { }
+impl HistPixel for Luma<u8> { }
+impl HistPixel for Luma<i8> { }
 
 /// Represent a histogram of a greyscale 8-bit image.
 pub struct Histogram {
@@ -38,7 +40,7 @@ impl Histogram {
     pub fn cumulative(&self) -> Histogram {
        let mut v = [0; 256];
        v[0] = self.v[0];
-       for i in 1usize..256usize {
+       for i in 1_usize..256_usize {
            v[i] = v[i-1] + self.v[i];
        }
        Histogram { v }
@@ -48,7 +50,7 @@ impl Histogram {
     // fn draw(&self) -> Image2D<Rgb<u8>>
 }
 
-impl<'a, P> From<&'a Image2D<P>> for Histogram where P: HistogramPixel {
+impl<'a, P> From<&'a Image2D<P>> for Histogram where P: HistPixel {
     /// Construct a Histogram from an image.
     fn from(img: &'a Image2D<P>) -> Histogram {
         let mut v = [0; 256];
@@ -61,13 +63,13 @@ impl<'a, P> From<&'a Image2D<P>> for Histogram where P: HistogramPixel {
 }
 
 /// Adjust the contrast of an image by histogram equalization.
-pub fn equalize_histogram<P>(img: &Image2D<P>) -> Image2D<P> where P: HistogramPixel {
+pub fn equalize<P>(img: &Image2D<P>) -> ImageBuffer2D<P> where P: HistPixel {
     let h: Histogram = img.into();
     let cumul = h.cumulative();
     let m = *cumul.bins().into_iter().max().unwrap();
     let transfer = cumul.bins().into_iter().map(|val| ((Into::<f64>::into(*val) * 255.) / (Into::<f64>::into(m))) as u8)
                         .collect::<Vec<u8>>();
-    let mut equalized = img.clone();
+    let mut equalized = img.to_owned();
     for pix in &mut equalized {
         let idx = <u8 as NumCast>::from::<P::Subpixel>(pix.channels()[0]).unwrap();
         pix.channels_mut()[0] = <P::Subpixel as NumCast>::from::<u8>(transfer[idx as usize]).unwrap();

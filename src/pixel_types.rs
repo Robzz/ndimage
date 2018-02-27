@@ -1,3 +1,5 @@
+//! Contains the definitions of the various pixel types defined in this crate.
+
 use num_traits::{Zero, One};
 use num_traits::cast::cast;
 
@@ -7,20 +9,23 @@ use std::convert::From;
 use std::ops::{Add, Sub, Mul, Div, Rem, Index};
 
 macro_rules! impl_pixels {
-    ( $( $name:ident, $n_channels:expr);+ ) =>
+    ( $( $(#[$attr:meta])* $name:ident, $n_channels:expr);+ ) =>
     {$(
         #[derive(Debug, Copy, Clone, PartialEq)]
+        $( #[$attr] )*
         pub struct $name<P>
             where P: Primitive
         {
+            /// Pixel channels
             pub data: [P; $n_channels]
         }
 
         impl<P> $name<P>
             where P: Primitive
         {
+            /// Construct a pixel from an array representing its' channels.
             pub fn new(data: [P; $n_channels]) -> $name<P> {
-                $name { data: data }
+                $name { data }
             }
         }
 
@@ -34,7 +39,7 @@ macro_rules! impl_pixels {
                 for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
                     *n = *s + *r;
                 }
-                $name { data: data }
+                $name { data }
             }
         }
 
@@ -48,7 +53,7 @@ macro_rules! impl_pixels {
                 for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
                     *n = *s - *r;
                 }
-                $name { data: data }
+                $name { data }
             }
         }
 
@@ -62,7 +67,7 @@ macro_rules! impl_pixels {
                 for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
                     *n = *s - *r;
                 }
-                $name { data: data }
+                $name { data }
             }
         }
 
@@ -76,7 +81,7 @@ macro_rules! impl_pixels {
                 for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
                     *n = *s * *r;
                 }
-                $name { data: data }
+                $name { data }
             }
         }
 
@@ -104,7 +109,7 @@ macro_rules! impl_pixels {
                 for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
                     *n = *s / *r;
                 }
-                $name { data: data }
+                $name { data }
             }
         }
 
@@ -118,7 +123,7 @@ macro_rules! impl_pixels {
                 for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
                     *n = *s % *r;
                 }
-                $name { data: data }
+                $name { data }
             }
         }
 
@@ -220,9 +225,13 @@ macro_rules! impl_pixels {
 }
 
 impl_pixels!(
+    /// Grayscale pixel type
     Luma, 1;
+    /// Grayscale with alpha pixel type
     LumaA, 2;
+    /// RGB pixel type
     Rgb, 3;
+    /// RGB with alpha pixel type
     RgbA, 4
 );
 

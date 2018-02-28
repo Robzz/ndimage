@@ -1,8 +1,8 @@
 extern crate ndimage;
 
-use ndimage::kernel::Kernel;
+use ndimage::processing::kernel::Kernel;
+use ndimage::processing::histogram;
 use ndimage::io::png::{Decoder, Encoder8};
-use ndimage::processing;
 
 use std::env::{args, current_dir};
 use std::fs::File;
@@ -27,7 +27,7 @@ fn main() {
     let gaussian_kernel = Kernel::gaussian(3., 6);
     let box_img = box_kernel.convolve(&img);
     let gaussian_img = gaussian_kernel.convolve(&img);
-    let equalized = processing::histogram::equalize(&img);
+    let equalized = histogram::equalize(&img);
 
     let encoder = Encoder8::new(&box_img, box_file).unwrap();
     encoder.write().unwrap();

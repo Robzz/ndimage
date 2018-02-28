@@ -1,8 +1,6 @@
 //! PNG format encoders and decoders.
 
-use image2d::{Image2D, ImageBuffer2D};
-use pixel_types::*;
-use traits::Pixel;
+use core::{Image2D, ImageBuffer2D, Pixel, Luma, LumaA, Rgb, RgbA};
 
 use byteorder::{ByteOrder, BigEndian, ReadBytesExt};
 use failure::Error;
@@ -338,9 +336,8 @@ impl<'a, W, P> Encoder16<'a, W, P>
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use image2d::Image2DMut;
-    use traits::{Pixel, Primitive};
+    use core::{Image2DMut, ImageBuffer2D, Pixel, Primitive};
+    use io::png::*;
 
     use num_traits::{NumCast, Zero};
 

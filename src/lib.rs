@@ -7,16 +7,8 @@ extern crate byteorder;
 extern crate num_traits;
 extern crate png;
 
-pub mod image2d;
+pub mod core;
 pub mod io;
-pub mod kernel;
-pub mod rect;
-pub mod traits;
 pub mod processing;
-pub mod pixel_types;
 mod helper;
 mod math;
-
-pub use image2d::Image2D;
-pub use traits::{Pixel, PixelOps, Primitive};
-pub use pixel_types::{Luma, Rgb};

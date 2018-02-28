@@ -1,10 +1,8 @@
 //! Contains the definitions of the image kernel type and the convolution operation.
 
-use image2d::{Image2D, Image2DMut, ImageBuffer2D};
+use core::{Image2D, Image2DMut, ImageBuffer2D, Rect, Pixel, Primitive};
 use helper::generic::f64_to_float;
 use math;
-use rect::Rect;
-use traits::{Pixel, Primitive};
 
 use failure::Error;
 use num_traits::{NumCast, Zero, Float};

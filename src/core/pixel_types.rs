@@ -3,7 +3,7 @@
 use num_traits::{Zero, One};
 use num_traits::cast::cast;
 
-use traits::{Primitive, Pixel, PixelOps, PixelCast};
+use core::{Primitive, Pixel, PixelOps, PixelCast};
 
 use std::convert::From;
 use std::ops::{Add, Sub, Mul, Div, Rem, Index};

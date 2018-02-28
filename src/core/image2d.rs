@@ -8,9 +8,7 @@ use num_traits::{Zero};
 use std::cmp::min;
 use std::iter::{IntoIterator};
 
-use pixel_types::{Luma, LumaA, Rgb, RgbA};
-use rect::Rect;
-use traits::{Pixel, Primitive};
+use core::{Luma, LumaA, Rgb, RgbA, Rect, Pixel, Primitive};
 
 /// 2-dimensional image type.
 pub trait Image2D<P>: Sync
@@ -357,8 +355,9 @@ pub fn luma_alpha_to_luma<P>(img: &Image2D<LumaA<P>>) -> ImageBuffer2D<Luma<P>>
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use ::Luma;
+    use core::{Image2D, Image2DMut, ImageBuffer2D, Region, Pixel, Luma, Rect, Iter};
+
+    use num_traits::Zero;
 
     use std::iter::FromIterator;
     use std::fmt::Debug;
@@ -458,8 +457,6 @@ mod tests {
 
     #[test]
     fn test_fill_rect() {
-        use traits::Region;
-
         let mut img: ImageBuffer2D<Luma<u8>> = ImageBuffer2D::new(5, 5);
         let r = Rect::new(1, 1, 3, 3);
         img.fill_rect(&r, &Luma::<u8>::new([255]));

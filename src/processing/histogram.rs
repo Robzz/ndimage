@@ -1,8 +1,6 @@
 //! Contains the definitions of the Histogram type and Histogram equalization functions.
 
-use image2d::{Image2D, ImageBuffer2D};
-use pixel_types::Luma;
-use traits::{Pixel};
+use core::{Image2D, ImageBuffer2D, Luma, Pixel};
 
 use num_traits::{Zero, NumCast};
 

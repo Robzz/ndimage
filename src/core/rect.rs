@@ -1,7 +1,6 @@
 //! Contains the definition of the `Rect` type and trait implementations for it.
 
-use image2d::Image2D;
-use traits::{Region, Pixel};
+use core::{Image2D, Region, Pixel};
 
 use std::cmp::{min, max};
 
@@ -99,11 +98,7 @@ impl Region for Rect {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use image2d::ImageBuffer2D;
-
-    use ::Luma;
+    use core::{ImageBuffer2D, Rect, Luma, Region};
 
     #[test]
     fn test_rect() {

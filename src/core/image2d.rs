@@ -38,7 +38,7 @@ pub trait Image2D<P>: Sync
     /// coordinates.
     ///
     /// **Panics** if the specified region crosses image boundaries.
-    fn rect_iterator(&self, rect: &Rect) -> Iter<P>;
+    fn rect_iter(&self, rect: &Rect) -> RectIter<P>;
 
     /// Translate the given `Rect` within the image by the given 2D vector. The parts of the
     /// original `Rect` than fall out of the iamge will be cropped. Return the translated `Rect` if
@@ -99,14 +99,14 @@ pub trait Image2DMut<P>: Image2D<P>
     /// coordinates.
     ///
     /// **Panics** if the specified region crosses image boundaries.
-    fn rect_iterator_mut(&mut self, rect: &Rect) -> IterMut<P>;
+    fn rect_iter_mut(&mut self, rect: &Rect) -> RectIterMut<P>;
 
     /// Fill the image with the given value
     fn fill(&mut self, value: P);
 
     /// Fill the given `Rect` with the given value.
     fn fill_rect(&mut self, rect: &Rect, value: &P) {
-        for pixel in self.rect_iterator_mut(rect) {
+        for pixel in self.rect_iter_mut(rect) {
             *pixel = value.clone();
         }
     }
@@ -128,7 +128,7 @@ pub trait Image2DMut<P>: Image2D<P>
             bail!("Source rect does not fit destination image.");
         }
 
-        for (src_pixel, dst_pixel) in img.rect_iterator(src_rect).zip(self.rect_iterator_mut(dst_rect)) {
+        for (src_pixel, dst_pixel) in img.rect_iter(src_rect).zip(self.rect_iter_mut(dst_rect)) {
             *dst_pixel = src_pixel.clone();
         }
         Ok(())
@@ -136,6 +136,9 @@ pub trait Image2DMut<P>: Image2D<P>
 
     /// Return a mutable Iterator on the image pixels.
     fn iter_mut(&mut self) -> IterMut<P>;
+
+    /// Return a mutable view on a rectangular region of the image.
+    fn sub_image_mut(&mut self, rect: &Rect) -> Image2DViewMut<P>;
 }
 
 impl<'a, P> IntoIterator for &'a mut Image2DMut<P>
@@ -151,17 +154,17 @@ impl<'a, P> IntoIterator for &'a mut Image2DMut<P>
 
 /// Abstract representation of a 2D image. Can contain owned or borrowed data depending on the type
 /// of D.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Image2DRepr<D, P>
     where P: Pixel,
-          D: ndarray::DataClone<Elem=P>
+          D: ndarray::Data<Elem=P>
 {
     buffer: ArrayBase<D, Ix2>
 }
 
 impl<D, P> PartialEq for Image2DRepr<D, P>
     where P: Pixel,
-          D: ndarray::DataClone<Elem=P>
+          D: ndarray::Data<Elem=P>
 {
     fn eq(&self, other: &Image2DRepr<D, P>) -> bool {
         self.dimensions() == other.dimensions() && self.iter().eq(other.iter())
@@ -170,12 +173,12 @@ impl<D, P> PartialEq for Image2DRepr<D, P>
 
 unsafe impl<D, P> Sync for Image2DRepr<D, P>
     where P: Pixel,
-          D: ndarray::DataClone<Elem=P>
+          D: ndarray::Data<Elem=P>
 { }
 
 impl<D, P> Image2D<P> for Image2DRepr<D, P>
     where P: Pixel,
-          D: ndarray::DataClone<Elem=P>
+          D: ndarray::Data<Elem=P>
 {
     /// Return the width of the image.
     fn width(&self) -> u32 { self.buffer.cols() as u32 }
@@ -205,12 +208,13 @@ impl<D, P> Image2D<P> for Image2DRepr<D, P>
     /// coordinates.
     ///
     /// **Panics** if the specified region crosses image boundaries.
-    fn rect_iterator(&self, rect: &Rect) -> Iter<P> {
+    fn rect_iter(&self, rect: &Rect) -> RectIter<P> {
         let left = rect.left() as isize;
         let top = rect.top() as isize;
         let right = left + rect.width() as isize;
         let bottom = top + rect.height() as isize;
-        self.buffer.slice(s![top..bottom, left..right]).into_iter()
+
+        RectIter { iter: self.buffer.slice(s![top..bottom, left..right]).into_iter() }
     }
 
     fn iter(&self) -> Iter<P> {
@@ -228,7 +232,7 @@ impl<D, P> Image2D<P> for Image2DRepr<D, P>
 
 impl<D, P> Image2DMut<P> for Image2DRepr<D, P>
     where P: Pixel,
-          D: ndarray::DataMut<Elem=P> + ndarray::DataClone<Elem=P>
+          D: ndarray::DataMut<Elem=P>
 {
     fn put_pixel(&mut self, x: u32, y: u32, pixel: P) {
         self.buffer[[y as usize, x as usize]] = pixel;
@@ -238,12 +242,13 @@ impl<D, P> Image2DMut<P> for Image2DRepr<D, P>
         self.buffer.indexed_iter_mut()
     }
 
-    fn rect_iterator_mut(&mut self, rect: &Rect) -> IterMut<P> {
+    fn rect_iter_mut(&mut self, rect: &Rect) -> RectIterMut<P> {
         let left = rect.left() as isize;
         let top = rect.top() as isize;
         let right = left + rect.width() as isize;
         let bottom = top + rect.height() as isize;
-        self.buffer.slice_mut(s![top..bottom, left..right]).into_iter()
+
+        RectIterMut { iter: self.buffer.slice_mut(s![top..bottom, left..right]).into_iter() }
     }
 
     fn fill(&mut self, value: P) {
@@ -252,6 +257,10 @@ impl<D, P> Image2DMut<P> for Image2DRepr<D, P>
 
     fn iter_mut(&mut self) -> IterMut<P> {
         self.buffer.iter_mut()
+    }
+
+    fn sub_image_mut<'a>(&'a mut self, rect: &Rect) -> Image2DViewMut<'a, P> {
+        Image2DRepr { buffer: self.buffer.slice_mut(s![rect.top() as usize..rect.bottom() as usize, rect.left() as usize..rect.right() as usize]) }
     }
 }
 
@@ -285,10 +294,10 @@ pub type ImageBuffer2D<P> = Image2DRepr<ndarray::OwnedRepr<P>, P>;
 pub type Image2DView<'a, P> = Image2DRepr<ndarray::ViewRepr<&'a P>, P>;
 /// Mutably borrowed 2D image representation.
 pub type Image2DViewMut<'a, P> = Image2DRepr<ndarray::ViewRepr<&'a mut P>, P>;
-/// Type of image iterators.
-pub type Iter<'a, P> = ndarray::iter::Iter<'a, P, Ix2>;
-/// Type of mutable image iterators.
-pub type IterMut<'a, P> = ndarray::iter::IterMut<'a, P, Ix2>;
+
+// Type of ndarray iterators.
+type Iter<'a, P> = ndarray::iter::Iter<'a, P, Ix2>;
+type IterMut<'a, P> = ndarray::iter::IterMut<'a, P, Ix2>;
 
 impl<P> ImageBuffer2D<P>
     where P: Pixel
@@ -328,9 +337,41 @@ impl<P> ImageBuffer2D<P>
         let buf = try!(Array2::from_shape_vec((h as usize, w as usize), v_pixels));
         Ok(ImageBuffer2D { buffer: buf })
     }
-
 }
 
+/// Iterator over a rectangular region. Created by `Image2D`'s `rect_iter` method.
+pub struct RectIter<'a, P>
+    where P: Pixel + 'a
+{
+    iter: Iter<'a, P>
+}
+
+impl<'a, P> Iterator for RectIter<'a, P>
+    where P: Pixel + 'a
+{
+    type Item = &'a P;
+
+    fn next(&mut self) -> Option<&'a P> {
+        self.iter.next()
+    }
+}
+
+/// Mutable iterator over a rectangular region. Created by `Image2DMut`'s `rect_iter_mut` method.
+pub struct RectIterMut<'a, P>
+    where P: Pixel + 'a
+{
+    iter: IterMut<'a, P>
+}
+
+impl<'a, P> Iterator for RectIterMut<'a, P>
+    where P: Pixel + 'a
+{
+    type Item = &'a mut P;
+
+    fn next(&mut self) -> Option<&'a mut P> {
+        self.iter.next()
+    }
+}
 /// Discard the alpha component of an `RgbA` image.
 pub fn rgba_to_rgb<P>(img: &Image2D<RgbA<P>>) -> ImageBuffer2D<Rgb<P>>
     where P: Primitive
@@ -355,7 +396,7 @@ pub fn luma_alpha_to_luma<P>(img: &Image2D<LumaA<P>>) -> ImageBuffer2D<Luma<P>>
 
 #[cfg(test)]
 mod tests {
-    use core::{Image2D, Image2DMut, ImageBuffer2D, Region, Pixel, Luma, Rect, Iter};
+    use core::{Image2D, Image2DMut, ImageBuffer2D, Region, Pixel, Luma, Rect};
 
     use num_traits::Zero;
 
@@ -424,20 +465,16 @@ mod tests {
     }
 
     #[test]
-    fn test_rect_iterator() {
-        let v: Vec<Luma<usize>> = (1..16).map(|n| Luma::new([n])).collect();
+    fn test_rect_iter() {
+        let v: Vec<Luma<u8>> = (1_u8..16_u8).map(|n| Luma::new([n])).collect();
         let img = ImageBuffer2D::from_vec(5, 3, v).unwrap();
-        let subimg1 = img.rect_iterator(&Rect::new(1, 1, 3, 1));
+        let subimg1 = img.rect_iter(&Rect::new(1, 1, 3, 1));
 
-        fn subimg_vec_eq<'a>(subimg: Iter<'a, Luma<usize>>, v: &Vec<usize>) -> bool {
-            let v_iter   = v.into_iter();
-            match subimg.len() == v_iter.len() {
-                true => !subimg.zip(v_iter).any(|(p, i)| p.data[0] != *i),
-                false => false
-            }
+        fn subimg_vec_eq<'a>(subimg: super::RectIter<'a, Luma<u8>>, v: &Vec<u8>) -> bool {
+            v.into_iter().zip(subimg).all(|(p, l)| *p == l.data[0])
         }
 
-        let subimg1_vec: Vec<usize> = vec![7, 8, 9];
+        let subimg1_vec: Vec<u8> = vec![7, 8, 9];
 
         assert!(subimg_vec_eq(subimg1, &subimg1_vec));
     }

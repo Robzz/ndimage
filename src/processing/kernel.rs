@@ -44,7 +44,7 @@ impl<T> Kernel<T> where T: Primitive {
             let rx = (x as u32).saturating_sub(self.radius);
             let ry = (y as u32).saturating_sub(self.radius);
             let rect = Rect::new(rx, ry, d, d).crop_to_image(img).unwrap();
-            for (p, e) in img.rect_iterator(&rect).zip(self.elems.iter()) {
+            for (p, e) in img.rect_iter(&rect).zip(self.elems.iter()) {
                 // Perform the convolution on the kernel floating point type.
                 region_accu.extend(p.channels().into_iter().map(|c| *e * <T as NumCast>::from::<S>(*c).unwrap()));
             }

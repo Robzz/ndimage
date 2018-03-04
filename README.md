@@ -1,6 +1,7 @@
 # ndimage
 
-[![Build Status](https://travis-ci.org/Robzz/ndimage.svg?branch=master)](https://travis-ci.org/Robzz/ndimage)
+[![Travis CI Build Status](https://travis-ci.org/Robzz/ndimage.svg?branch=master)](https://travis-ci.org/Robzz/ndimage)
+[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/gsrt4u33o9jp2l71?svg=true)](https://ci.appveyor.com/project/Robzz/ndimage)
 [![Code Coverage](https://codecov.io/gh/Robzz/ndimage/branch/master/graph/badge.svg)](https://codecov.io/gh/Robzz/ndimage)
 
 ndimage is a Rust crate for high level image manipulation based on the [ndarray](https://crates.io/crates/ndarray) crate.

@@ -2,6 +2,7 @@
 
 use num_traits::{Zero, One};
 use num_traits::cast::cast;
+#[cfg(feature="rand_integration")] use rand::{Rand, Rng};
 
 use core::{Primitive, Pixel, PixelOps, PixelCast};
 
@@ -219,6 +220,22 @@ macro_rules! impl_pixels {
                 for (dst, src) in other.channels_mut().into_iter().zip(self.channels().into_iter()) {
                     *dst = cast::<S, O>(src.clone()).unwrap_or(<O as Zero>::zero());
                 }
+            }
+        }
+
+        #[cfg(feature = "rand_integration")]
+        impl<P> Rand for $name<P>
+            where P: Primitive
+        {
+            fn rand<R>(rng: &mut R) -> $name<P>
+                where R: Rng
+            {
+                let mut p = [P::zero(); $n_channels];
+                for i in 0..$n_channels {
+                    p[i] = P::rand(rng);
+                }
+
+                $name::new(p)
             }
         }
     )+}

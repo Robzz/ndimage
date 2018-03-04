@@ -4,6 +4,7 @@ use failure::Error;
 use ndarray;
 use ndarray::prelude::*;
 use num_traits::{Zero};
+#[cfg(feature="rand_integration")] use rand::{Rand, Rng};
 
 use std::cmp::min;
 use std::iter::{IntoIterator};
@@ -34,15 +35,13 @@ pub trait Image2D<P>: Sync
     /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &P)
     fn enumerate_pixels(&self) -> ndarray::iter::IndexedIter<P, Ix2>;
 
-    /// Return an iterator on a subset of the image of specified dimensions starting at the specified
-    /// coordinates.
+    /// Return an iterator on a subset of the image of specified dimensions starting at the specified coordinates.
     ///
     /// **Panics** if the specified region crosses image boundaries.
     fn rect_iter(&self, rect: &Rect) -> RectIter<P>;
 
-    /// Translate the given `Rect` within the image by the given 2D vector. The parts of the
-    /// original `Rect` than fall out of the iamge will be cropped. Return the translated `Rect` if
-    /// it's not empty, or `None` otherwise.
+    /// Translate the given `Rect` within the image by the given 2D vector. The parts of the original `Rect` than fall
+    /// out of the iamge will be cropped. Return the translated `Rect` if it's not empty, or `None` otherwise.
     fn translate_rect(&self, rect: &Rect, x: i64, y: i64) -> Option<Rect> {
         let left = i64::from(rect.left()) + x;
         let top = i64::from(rect.top()) + y;
@@ -95,8 +94,7 @@ pub trait Image2DMut<P>: Image2D<P>
     /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &mut P)
     fn enumerate_pixels_mut(&mut self) -> ndarray::iter::IndexedIterMut<P, Ix2>;
 
-    /// Return a mutable view to a subset of the image of specified dimensions starting at the specified
-    /// coordinates.
+    /// Return a mutable view to a subset of the image of specified dimensions starting at the specified coordinates.
     ///
     /// **Panics** if the specified region crosses image boundaries.
     fn rect_iter_mut(&mut self, rect: &Rect) -> RectIterMut<P>;
@@ -152,8 +150,7 @@ impl<'a, P> IntoIterator for &'a mut Image2DMut<P>
     }
 }
 
-/// Abstract representation of a 2D image. Can contain owned or borrowed data depending on the type
-/// of D.
+/// Abstract representation of a 2D image. Can contain owned or borrowed data depending on the type of D.
 #[derive(Debug)]
 pub struct Image2DRepr<D, P>
     where P: Pixel,
@@ -204,8 +201,7 @@ impl<D, P> Image2D<P> for Image2DRepr<D, P>
         self.buffer.indexed_iter()
     }
 
-    /// Return a mutable view to a subset of the image of specified dimensions starting at the specified
-    /// coordinates.
+    /// Return a mutable view to a subset of the image of specified dimensions starting at the specified coordinates.
     ///
     /// **Panics** if the specified region crosses image boundaries.
     fn rect_iter(&self, rect: &Rect) -> RectIter<P> {
@@ -322,8 +318,7 @@ impl<P> ImageBuffer2D<P>
         Ok(ImageBuffer2D { buffer: buf })
     }
 
-    /// Create a new image of specified dimensions from a `Vec` of the specified pixel type's
-    /// subpixel.
+    /// Create a new image of specified dimensions from a `Vec` of the specified pixel type's subpixel.
     ///
     /// **Error**: `InvalidDimensions` if the dimensions do not match the length of `v`.
     pub fn from_raw_vec(w: u32, h: u32, v: &[P::Subpixel]) -> Result<ImageBuffer2D<P>, Error> {
@@ -336,6 +331,25 @@ impl<P> ImageBuffer2D<P>
         }
         let buf = try!(Array2::from_shape_vec((h as usize, w as usize), v_pixels));
         Ok(ImageBuffer2D { buffer: buf })
+    }
+
+    /// Generate a new image from a closure that will be called with the index of each pixel.
+    pub fn generate<F>(w: u32, h: u32, mut f: F) -> ImageBuffer2D<P>
+        where F: FnMut((u32, u32)) -> P
+    {
+        ImageBuffer2D { buffer: Array2::from_shape_fn(Ix2(h as usize, w as usize), |(y, x)| f((x as u32, y as u32))) }
+    }
+}
+
+#[cfg(feature = "rand_integration")]
+impl<P> ImageBuffer2D<P>
+    where P: Pixel + Rand
+{
+    /// Generate a random image
+    pub fn rand<R>(width: u32, height: u32, rng: &mut R) -> ImageBuffer2D<P>
+        where R: Rng
+    {
+        ImageBuffer2D::generate(width, height, |(_x, _y)| P::rand(rng))
     }
 }
 
@@ -399,6 +413,7 @@ mod tests {
     use core::{Image2D, Image2DMut, ImageBuffer2D, Region, Pixel, Luma, Rect};
 
     use num_traits::Zero;
+    #[cfg(feature = "rand_integration")] use rand::thread_rng;
 
     use std::iter::FromIterator;
     use std::fmt::Debug;
@@ -548,13 +563,11 @@ mod tests {
         {
             let mut sub_img = img.sub_image_mut(&Rect::new(1, 1, 3, 3));
             for ((y, x), mut p) in sub_img.enumerate_pixels_mut() {
-                println!("Writing coords({}, {})", x, y);
                 p.data[0] = (2*(x+1) + 3*(y+1)) as u8;
             }
         }
 
         for ((y, x), p) in img.enumerate_pixels() {
-            println!("Coords({}, {})", x, y);
             if x >= 1 && x <= 3 && y >= 1 && y <= 3 {
                 assert_eq!(&Luma::new([(2 * x + 3 * y) as u8]), p);
             }
@@ -562,5 +575,21 @@ mod tests {
                 assert_eq!(&Luma::new([0]), p);
             }
         }
+    }
+
+    #[test]
+    fn test_generate() {
+        let img = ImageBuffer2D::generate(1280, 720, |(x, y)| Luma::new([5 * x + 13 * y]));
+        for ((y, x), pix) in img.enumerate_pixels() {
+            assert_eq!(pix, &Luma::new([(5 * x + 13 * y) as u32]));
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "rand_integration")]
+    fn test_rand() {
+        let img = ImageBuffer2D::<Luma<u8>>::rand(1280, 720, &mut thread_rng());
+        let sum = img.into_iter().fold(0u32, |acc, p| acc + p.data[0] as u32);
+        assert!(sum > 100_000_000 && sum < 130_000_000);
     }
 }

@@ -3,12 +3,18 @@ name = "ndimage"
 version = "0.1.0"
 authors = ["Robin Chavignat"]
 
+[features]
+default = ["rand_integration"]
+rand_integration = ["rand"]
+
 [dependencies]
 byteorder = "1.2.*"
 failure = "0.1.*"
 ndarray = "0.11.*"
 num-traits = "0.2.*"
 png = "0.11.*"
+
+rand = { version = "0.4.*", optional = true }
 
 [dev-dependencies]
 image = "0.18.0"

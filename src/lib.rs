@@ -6,6 +6,7 @@ extern crate byteorder;
 #[macro_use] extern crate ndarray;
 extern crate num_traits;
 extern crate png;
+#[cfg(feature = "rand_integration")] extern crate rand;
 
 pub mod core;
 pub mod io;

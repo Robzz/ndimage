@@ -1,13 +1,26 @@
 //! Contains the definitions of the various traits used in this crate.
 
 use num_traits::{NumRef, RefNum, NumCast, NumOps, Zero, NumAssign};
+#[cfg(feature="rand_integration")] use rand::Rand;
+
 use std::fmt::{Debug, Display};
 
 /// Implemented for primitive pixel types.
-pub trait Primitive: Copy + Clone + Debug + Display + NumAssign + RefNum<Self> + NumCast + PartialOrd + Sync + Send{ }
+#[cfg(not(feature = "rand_integration"))]
+pub trait Primitive: Copy + Clone + Debug + Display + NumAssign + RefNum<Self> + NumCast + PartialOrd + Sync + Send { }
 
+/// Implemented for primitive pixel types.
+#[cfg(feature = "rand_integration")]
+pub trait Primitive: Copy + Clone + Debug + Display + NumAssign + RefNum<Self> + NumCast + PartialOrd + Sync + Send + Rand { }
+
+#[cfg(not(feature = "rand_integration"))]
 impl<T> Primitive for T
     where T: Copy + Clone + Debug + Display + NumAssign + RefNum<T> + NumCast + PartialOrd + Sync + Send
+{}
+
+#[cfg(feature = "rand_integration")]
+impl<T> Primitive for T
+    where T: Copy + Clone + Debug + Display + NumAssign + RefNum<T> + NumCast + PartialOrd + Sync + Send + Rand
 {}
 
 /// This trait must be implemented for the types you want to store in an image.
@@ -26,14 +39,14 @@ pub trait Pixel: Clone + PartialEq + Sync + Send {
 
     /// Create a new pixel from a slice.
     ///
-    /// **Panics**: the length of the slice is not checked, so this function will panic if s.len()
-    /// is less than the number of channels in the pixel.
+    /// **Panics**: the length of the slice is not checked, so this function will panic if s.len() is less than the
+    /// number of channels in the pixel.
     fn from_slice(s: &[Self::Subpixel]) -> Self;
 
     /// Set the value of the pixel from a slice.
     ///
-    /// **Panics**: the length of the slice is not checked, so this function will panic if s.len()
-    /// is less than the number of channels in the pixel.
+    /// **Panics**: the length of the slice is not checked, so this function will panic if s.len() is less than the
+    /// number of channels in the pixel.
     fn set_to_slice(&mut self, s: &[Self::Subpixel]);
 
     /// Compute a new Pixel by applying an operation to each individual pixel component.
@@ -62,11 +75,10 @@ pub trait PixelOpsRef: PixelOps + NumRef { }
 
 /// Enables casts between pixel types.
 ///
-/// Rust's type system can't (AFAIK) cannot express that both pixel types should have the same
-/// number of channels, so this restriction is not enforced. However, all implementations of this
-/// trait by pixel within this crate are bounded to only cast between related pixel types only
-/// differing by their subpixel associated type. If you're implementing your own pixel types,
-/// you should probably do the same.
+/// Rust's type system can't (AFAIK) cannot express that both pixel types should have the same number of channels, so
+/// this restriction is not enforced. However, all implementations of this trait by pixel within this crate are bounded
+/// to only cast between related pixel types only differing by their subpixel associated type. If you're implementing
+/// your own pixel types, you should probably do the same.
 pub trait PixelCast<P, S, O>: Pixel<Subpixel=S>
     where P: Pixel<Subpixel=O>,
           O: Primitive,

@@ -226,7 +226,7 @@ impl<D, P> Image2D<P> for Image2DRepr<D, P>
     }
 
     fn sub_image(&self, rect: &Rect) -> Image2DView<P> {
-        Image2DRepr { buffer: self.buffer.slice(s![rect.top() as usize..rect.bottom() as usize, rect.left() as usize..rect.right() as usize]) }
+        Image2DRepr { buffer: self.buffer.slice(s![rect.top() as usize..(rect.bottom() + 1) as usize, rect.left() as usize..(rect.right() + 1) as usize]) }
     }
 }
 
@@ -260,13 +260,13 @@ impl<D, P> Image2DMut<P> for Image2DRepr<D, P>
     }
 
     fn sub_image_mut<'a>(&'a mut self, rect: &Rect) -> Image2DViewMut<'a, P> {
-        Image2DRepr { buffer: self.buffer.slice_mut(s![rect.top() as usize..rect.bottom() as usize, rect.left() as usize..rect.right() as usize]) }
+        Image2DRepr { buffer: self.buffer.slice_mut(s![rect.top() as usize..(rect.bottom() + 1) as usize, rect.left() as usize..(rect.right() + 1) as usize]) }
     }
 }
 
 impl<'a, D, P> IntoIterator for &'a Image2DRepr<D, P>
     where P: Pixel + 'a,
-          D: ndarray::DataClone<Elem=P>
+          D: ndarray::Data<Elem=P>
 {
     type Item = &'a P;
     type IntoIter = Iter<'a, P>;
@@ -278,7 +278,7 @@ impl<'a, D, P> IntoIterator for &'a Image2DRepr<D, P>
 
 impl<'a, D, P> IntoIterator for &'a mut Image2DRepr<D, P>
     where P: Pixel + 'a,
-          D: ndarray::DataMut<Elem=P> + ndarray::DataClone<Elem=P>
+          D: ndarray::DataMut<Elem=P>
 {
     type Item = &'a mut P;
     type IntoIter = IterMut<'a, P>;
@@ -520,16 +520,47 @@ mod tests {
     #[test]
     fn test_sub_image() {
         let mut v: Vec<Luma<u8>> = vec![];
-        for y in 0..5 {
+        for x in 0..5 {
+            v.push(Luma::new([0]));
+        }
+        for y in 0..3 {
             for x in 0..5 {
-                v.push(Luma::from((2*x + 3*y) as u8));
+                v.push(Luma::from((2*x + 3*(y+1)) as u8));
             }
+        }
+        for x in 0..5 {
+            v.push(Luma::new([0]));
         }
         let img = ImageBuffer2D::from_vec(5, 5, v.clone()).unwrap();
         let sub_img = img.sub_image(&Rect::new(1, 1, 3, 3));
 
-        for ((x, y), p) in sub_img.enumerate_pixels().map(|((y, x), p)| ((x, y), p.channels()[0])) {
-            assert_eq!((2*(x+1) + 3*(y+1)) as u8, p);
+        let mut i = 0;
+        for ((y, x), p) in sub_img.enumerate_pixels() {
+            assert_eq!(&Luma::new([(2*(x+1) + 3*(y+1)) as u8]), p);
+            i = i + 1;
+        }
+        assert_eq!(i, 9);
+    }
+
+    #[test]
+    fn test_sub_image_mut() {
+        let mut img = ImageBuffer2D::<Luma<u8>>::new(5, 5);
+        {
+            let mut sub_img = img.sub_image_mut(&Rect::new(1, 1, 3, 3));
+            for ((y, x), mut p) in sub_img.enumerate_pixels_mut() {
+                println!("Writing coords({}, {})", x, y);
+                p.data[0] = (2*(x+1) + 3*(y+1)) as u8;
+            }
+        }
+
+        for ((y, x), p) in img.enumerate_pixels() {
+            println!("Coords({}, {})", x, y);
+            if x >= 1 && x <= 3 && y >= 1 && y <= 3 {
+                assert_eq!(&Luma::new([(2 * x + 3 * y) as u8]), p);
+            }
+            else {
+                assert_eq!(&Luma::new([0]), p);
+            }
         }
     }
 }

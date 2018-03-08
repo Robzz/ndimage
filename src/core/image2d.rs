@@ -35,14 +35,23 @@ pub trait Image2D<P>: Sync
     /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &P)
     fn enumerate_pixels(&self) -> ndarray::iter::IndexedIter<P, Ix2>;
 
+    /// Return an iterator over the rows of an image in scanline order.
+    fn rows(&self) -> RowsIter<P>;
+
+    /// Return an iterator over the columns of an image in left to right order.
+    fn cols(&self) -> ColsIter<P>;
+
+    /// Return a Rect containing the whole image.
+    fn rect(&self) -> Rect { Rect::new(0, 0, self.width(), self.height()) }
+
     /// Return an iterator on a subset of the image of specified dimensions starting at the specified coordinates.
     ///
     /// **Panics** if the specified region crosses image boundaries.
-    fn rect_iter(&self, rect: &Rect) -> RectIter<P>;
+    fn rect_iter(&self, rect: Rect) -> RectIter<P>;
 
     /// Translate the given `Rect` within the image by the given 2D vector. The parts of the original `Rect` than fall
     /// out of the iamge will be cropped. Return the translated `Rect` if it's not empty, or `None` otherwise.
-    fn translate_rect(&self, rect: &Rect, x: i64, y: i64) -> Option<Rect> {
+    fn translate_rect(&self, rect: Rect, x: i64, y: i64) -> Option<Rect> {
         let left = i64::from(rect.left()) + x;
         let top = i64::from(rect.top()) + y;
         let right = i64::from(rect.right()) + x;
@@ -66,7 +75,7 @@ pub trait Image2D<P>: Sync
     fn to_owned(&self) -> ImageBuffer2D<P>;
 
     /// Return a view on a rectangular region of the image.
-    fn sub_image(&self, rect: &Rect) -> Image2DView<P>;
+    fn sub_image(&self, rect: Rect) -> Image2DView<P>;
 }
 
 impl<'a, P> IntoIterator for &'a Image2D<P>
@@ -94,23 +103,29 @@ pub trait Image2DMut<P>: Image2D<P>
     /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &mut P)
     fn enumerate_pixels_mut(&mut self) -> ndarray::iter::IndexedIterMut<P, Ix2>;
 
+    /// Return a mutable iterator over the rows of an image in scanline order.
+    fn rows_mut(&mut self) -> RowsIterMut<P>;
+
+    /// Return a mutable iterator over the columns of an image in left to right order.
+    fn cols_mut(&mut self) -> ColsIterMut<P>;
+
     /// Return a mutable view to a subset of the image of specified dimensions starting at the specified coordinates.
     ///
     /// **Panics** if the specified region crosses image boundaries.
-    fn rect_iter_mut(&mut self, rect: &Rect) -> RectIterMut<P>;
+    fn rect_iter_mut(&mut self, rect: Rect) -> RectIterMut<P>;
 
     /// Fill the image with the given value
     fn fill(&mut self, value: P);
 
     /// Fill the given `Rect` with the given value.
-    fn fill_rect(&mut self, rect: &Rect, value: &P) {
+    fn fill_rect(&mut self, rect: Rect, value: &P) {
         for pixel in self.rect_iter_mut(rect) {
             *pixel = value.clone();
         }
     }
 
     /// Blit (i.e. copy) a `Rect` from the source image onto the destination image.
-    fn blit_rect(&mut self, src_rect: &Rect, dst_rect: &Rect, img: &Image2D<P>) -> Result<(), Error>
+    fn blit_rect(&mut self, src_rect: Rect, dst_rect: Rect, img: &Image2D<P>) -> Result<(), Error>
         where Self: ::std::marker::Sized
     {
         if src_rect.size() != dst_rect.size() {
@@ -136,7 +151,7 @@ pub trait Image2DMut<P>: Image2D<P>
     fn iter_mut(&mut self) -> IterMut<P>;
 
     /// Return a mutable view on a rectangular region of the image.
-    fn sub_image_mut(&mut self, rect: &Rect) -> Image2DViewMut<P>;
+    fn sub_image_mut(&mut self, rect: Rect) -> Image2DViewMut<P>;
 }
 
 impl<'a, P> IntoIterator for &'a mut Image2DMut<P>
@@ -177,34 +192,34 @@ impl<D, P> Image2D<P> for Image2DRepr<D, P>
     where P: Pixel,
           D: ndarray::Data<Elem=P>
 {
-    /// Return the width of the image.
     fn width(&self) -> u32 { self.buffer.cols() as u32 }
-    /// Return the height of the image.
+
     fn height(&self) -> u32 { self.buffer.rows() as u32 }
-    /// Return the dimensions of the image as a `(width, height)` tuple.
+
     fn dimensions(&self) -> (u32, u32) { (self.width(), self.height()) }
 
     fn as_slice(&self) -> Option<&[P]> {
         self.buffer.as_slice()
     }
 
-    /// Return the pixel at the specified coordinates.
-    ///
-    /// **Panics** if the index is out of bounds.
     fn get_pixel(&self, x: u32, y: u32) -> P {
         self.buffer[[y as usize, x as usize]].clone()
     }
 
     // TODO: map to u32's for coherence
-    /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &P)
     fn enumerate_pixels(&self) -> ndarray::iter::IndexedIter<P, Ix2> {
         self.buffer.indexed_iter()
     }
 
-    /// Return a mutable view to a subset of the image of specified dimensions starting at the specified coordinates.
-    ///
-    /// **Panics** if the specified region crosses image boundaries.
-    fn rect_iter(&self, rect: &Rect) -> RectIter<P> {
+    fn rows(&self) -> RowsIter<P> {
+        RowsIter { iter: self.buffer.axis_iter(Axis(0)) }
+    }
+
+    fn cols(&self) -> ColsIter<P> {
+        ColsIter { iter: self.buffer.axis_iter(Axis(1)) }
+    }
+
+    fn rect_iter(&self, rect: Rect) -> RectIter<P> {
         let left = rect.left() as isize;
         let top = rect.top() as isize;
         let right = left + rect.width() as isize;
@@ -221,7 +236,7 @@ impl<D, P> Image2D<P> for Image2DRepr<D, P>
         ImageBuffer2D { buffer: self.buffer.to_owned() }
     }
 
-    fn sub_image(&self, rect: &Rect) -> Image2DView<P> {
+    fn sub_image(&self, rect: Rect) -> Image2DView<P> {
         Image2DRepr { buffer: self.buffer.slice(s![rect.top() as usize..(rect.bottom() + 1) as usize, rect.left() as usize..(rect.right() + 1) as usize]) }
     }
 }
@@ -238,7 +253,15 @@ impl<D, P> Image2DMut<P> for Image2DRepr<D, P>
         self.buffer.indexed_iter_mut()
     }
 
-    fn rect_iter_mut(&mut self, rect: &Rect) -> RectIterMut<P> {
+    fn rows_mut(&mut self) -> RowsIterMut<P> {
+        RowsIterMut { iter: self.buffer.axis_iter_mut(Axis(0)) }
+    }
+
+    fn cols_mut(&mut self) -> ColsIterMut<P> {
+        ColsIterMut { iter: self.buffer.axis_iter_mut(Axis(1)) }
+    }
+
+    fn rect_iter_mut(&mut self, rect: Rect) -> RectIterMut<P> {
         let left = rect.left() as isize;
         let top = rect.top() as isize;
         let right = left + rect.width() as isize;
@@ -255,7 +278,7 @@ impl<D, P> Image2DMut<P> for Image2DRepr<D, P>
         self.buffer.iter_mut()
     }
 
-    fn sub_image_mut<'a>(&'a mut self, rect: &Rect) -> Image2DViewMut<'a, P> {
+    fn sub_image_mut(&mut self, rect: Rect) -> Image2DViewMut<P> {
         Image2DRepr { buffer: self.buffer.slice_mut(s![rect.top() as usize..(rect.bottom() + 1) as usize, rect.left() as usize..(rect.right() + 1) as usize]) }
     }
 }
@@ -350,6 +373,74 @@ impl<P> ImageBuffer2D<P>
         where R: Rng
     {
         ImageBuffer2D::generate(width, height, |(_x, _y)| P::rand(rng))
+    }
+}
+
+/// Iterator over the rows of an image.
+pub struct RowsIter<'a, P>
+    where P: Pixel + 'a
+{
+    iter: ndarray::iter::AxisIter<'a, P, Ix1>
+}
+
+impl<'a, P> Iterator for RowsIter<'a, P>
+    where P: Pixel + 'a
+{
+    type Item = ndarray::ArrayView<'a, P, Ix1>;
+
+    fn next(&mut self) -> Option<ndarray::ArrayView<'a, P, Ix1>> {
+        self.iter.next()
+    }
+}
+
+/// Mutable iterator over the rows of an image.
+pub struct RowsIterMut<'a, P>
+    where P: Pixel + 'a
+{
+    iter: ndarray::iter::AxisIterMut<'a, P, Ix1>
+}
+
+impl<'a, P> Iterator for RowsIterMut<'a, P>
+    where P: Pixel + 'a
+{
+    type Item = ndarray::ArrayViewMut<'a, P, Ix1>;
+
+    fn next(&mut self) -> Option<ndarray::ArrayViewMut<'a, P, Ix1>> {
+        self.iter.next()
+    }
+}
+
+/// Iterator over the columns of an image.
+pub struct ColsIter<'a, P>
+    where P: Pixel + 'a
+{
+    iter: ndarray::iter::AxisIter<'a, P, Ix1>
+}
+
+impl<'a, P> Iterator for ColsIter<'a, P>
+    where P: Pixel + 'a
+{
+    type Item = ndarray::ArrayView<'a, P, Ix1>;
+
+    fn next(&mut self) -> Option<ndarray::ArrayView<'a, P, Ix1>> {
+        self.iter.next()
+    }
+}
+
+/// Mutable iterator over the columns of an image.
+pub struct ColsIterMut<'a, P>
+    where P: Pixel + 'a
+{
+    iter: ndarray::iter::AxisIterMut<'a, P, Ix1>
+}
+
+impl<'a, P> Iterator for ColsIterMut<'a, P>
+    where P: Pixel + 'a
+{
+    type Item = ndarray::ArrayViewMut<'a, P, Ix1>;
+
+    fn next(&mut self) -> Option<ndarray::ArrayViewMut<'a, P, Ix1>> {
+        self.iter.next()
     }
 }
 
@@ -480,10 +571,74 @@ mod tests {
     }
 
     #[test]
+    fn test_rows() {
+        let v = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let img = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v).unwrap();
+        for (y, row) in img.rows().enumerate() {
+            for (x, pix) in row.into_iter().enumerate() {
+                assert_eq!(pix, &Luma::new([x as u8 + 3 * y as u8]))
+            }
+        }
+    }
+
+    #[test]
+    fn test_rows_mut() {
+        let v = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let mut img = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v).unwrap();
+        for (y, row) in img.rows().enumerate() {
+            for (x, pix) in row.into_iter().enumerate() {
+                assert_eq!(pix, &Luma::new([x as u8 + 3 * y as u8]))
+            }
+        }
+        for (y, row) in img.rows_mut().enumerate() {
+            for (x, pix) in row.into_iter().enumerate() {
+                *pix = Luma::new([3 * x as u8 + 5 * y as u8]);
+            }
+        }
+        for (y, row) in img.rows().enumerate() {
+            for (x, pix) in row.into_iter().enumerate() {
+                assert_eq!(pix, &Luma::new([3 * x as u8 + 5 * y as u8]))
+            }
+        }
+    }
+
+    #[test]
+    fn test_cols() {
+        let v = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let img = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v).unwrap();
+        for (x, col) in img.cols().enumerate() {
+            for (y, pix) in col.into_iter().enumerate() {
+                assert_eq!(pix, &Luma::new([3 * y as u8 + x as u8]))
+            }
+        }
+    }
+
+    #[test]
+    fn test_cols_mut() {
+        let v = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let mut img = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v).unwrap();
+        for (x, col) in img.cols().enumerate() {
+            for (y, pix) in col.into_iter().enumerate() {
+                assert_eq!(pix, &Luma::new([x as u8 + 3 * y as u8]))
+            }
+        }
+        for (x, col) in img.cols_mut().enumerate() {
+            for (y, pix) in col.into_iter().enumerate() {
+                *pix = Luma::new([3 * x as u8 + 5 * y as u8]);
+            }
+        }
+        for (x, col) in img.cols().enumerate() {
+            for (y, pix) in col.into_iter().enumerate() {
+                assert_eq!(pix, &Luma::new([3 * x as u8 + 5 * y as u8]))
+            }
+        }
+    }
+
+    #[test]
     fn test_rect_iter() {
         let v: Vec<Luma<u8>> = (1_u8..16_u8).map(|n| Luma::new([n])).collect();
         let img = ImageBuffer2D::from_vec(5, 3, v).unwrap();
-        let subimg1 = img.rect_iter(&Rect::new(1, 1, 3, 1));
+        let subimg1 = img.rect_iter(Rect::new(1, 1, 3, 1));
 
         fn subimg_vec_eq<'a>(subimg: super::RectIter<'a, Luma<u8>>, v: &Vec<u8>) -> bool {
             v.into_iter().zip(subimg).all(|(p, l)| *p == l.data[0])
@@ -499,19 +654,19 @@ mod tests {
         let img: ImageBuffer2D<Luma<u8>> = ImageBuffer2D::new(5, 5);
         let r1 = Rect::new(1, 1, 3, 3);
         let r2 = Rect::new(1, 1, 5, 5);
-        assert_eq!(img.translate_rect(&r1, -2, -2), Some(Rect::new(0, 0, 2, 2)));
-        assert_eq!(img.translate_rect(&r1, -4, -4), None);
-        assert_eq!(img.translate_rect(&r1,  2,  2), Some(Rect::new(3, 3, 2, 2)));
-        assert_eq!(img.translate_rect(&r2,  2,  2), Some(Rect::new(3, 3, 2, 2)));
-        assert_eq!(img.translate_rect(&r2,  0,  0), Some(Rect::new(1, 1, 4, 4)));
-        assert_eq!(img.translate_rect(&r1,  4,  4), None);
+        assert_eq!(img.translate_rect(r1, -2, -2), Some(Rect::new(0, 0, 2, 2)));
+        assert_eq!(img.translate_rect(r1, -4, -4), None);
+        assert_eq!(img.translate_rect(r1,  2,  2), Some(Rect::new(3, 3, 2, 2)));
+        assert_eq!(img.translate_rect(r2,  2,  2), Some(Rect::new(3, 3, 2, 2)));
+        assert_eq!(img.translate_rect(r2,  0,  0), Some(Rect::new(1, 1, 4, 4)));
+        assert_eq!(img.translate_rect(r1,  4,  4), None);
     }
 
     #[test]
     fn test_fill_rect() {
         let mut img: ImageBuffer2D<Luma<u8>> = ImageBuffer2D::new(5, 5);
         let r = Rect::new(1, 1, 3, 3);
-        img.fill_rect(&r, &Luma::<u8>::new([255]));
+        img.fill_rect(r, &Luma::<u8>::new([255]));
         for ((x, y), &pixel) in img.enumerate_pixels() {
             if r.contains(x as u32, y as u32) {
                 assert_eq!(pixel, Luma::<u8>::new([255]));
@@ -527,15 +682,15 @@ mod tests {
         let mut img1 = ImageBuffer2D::<Luma<u8>>::new(64, 64);
         let mut img2 = ImageBuffer2D::<Luma<u8>>::new(64, 64);
         let r = Rect::new(16, 16, 32, 32);
-        img2.fill_rect(&r, &Luma::<u8>::new([255]));
-        assert!(img1.blit_rect(&r, &r, &img2).is_ok());
+        img2.fill_rect(r, &Luma::<u8>::new([255]));
+        assert!(img1.blit_rect(r, r, &img2).is_ok());
         assert_eq!(img1, img2);
     }
 
     #[test]
     fn test_sub_image() {
         let mut v: Vec<Luma<u8>> = vec![];
-        for x in 0..5 {
+        for _x in 0..5 {
             v.push(Luma::new([0]));
         }
         for y in 0..3 {
@@ -543,11 +698,11 @@ mod tests {
                 v.push(Luma::from((2*x + 3*(y+1)) as u8));
             }
         }
-        for x in 0..5 {
+        for _x in 0..5 {
             v.push(Luma::new([0]));
         }
         let img = ImageBuffer2D::from_vec(5, 5, v.clone()).unwrap();
-        let sub_img = img.sub_image(&Rect::new(1, 1, 3, 3));
+        let sub_img = img.sub_image(Rect::new(1, 1, 3, 3));
 
         let mut i = 0;
         for ((y, x), p) in sub_img.enumerate_pixels() {
@@ -561,7 +716,7 @@ mod tests {
     fn test_sub_image_mut() {
         let mut img = ImageBuffer2D::<Luma<u8>>::new(5, 5);
         {
-            let mut sub_img = img.sub_image_mut(&Rect::new(1, 1, 3, 3));
+            let mut sub_img = img.sub_image_mut(Rect::new(1, 1, 3, 3));
             for ((y, x), mut p) in sub_img.enumerate_pixels_mut() {
                 p.data[0] = (2*(x+1) + 3*(y+1)) as u8;
             }

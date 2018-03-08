@@ -231,8 +231,8 @@ macro_rules! impl_pixels {
                 where R: Rng
             {
                 let mut p = [P::zero(); $n_channels];
-                for i in 0..$n_channels {
-                    p[i] = P::rand(rng);
+                for c in p.iter_mut().take($n_channels) {
+                   *c = P::rand(rng);
                 }
 
                 $name::new(p)

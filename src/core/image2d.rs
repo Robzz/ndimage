@@ -35,8 +35,14 @@ pub trait Image2D<P>: Sync
     /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &P)
     fn enumerate_pixels(&self) -> ndarray::iter::IndexedIter<P, Ix2>;
 
+    /// Return an iterator over the pixels of an image row in left to right order.
+    fn row(&self, y: u32) -> Option<RowIter<P>>;
+
     /// Return an iterator over the rows of an image in scanline order.
     fn rows(&self) -> RowsIter<P>;
+
+    /// Return an iterator over the pixels of an image column in scanline order.
+    fn col(&self, x: u32) -> Option<ColIter<P>>;
 
     /// Return an iterator over the columns of an image in left to right order.
     fn cols(&self) -> ColsIter<P>;
@@ -103,8 +109,14 @@ pub trait Image2DMut<P>: Image2D<P>
     /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &mut P)
     fn enumerate_pixels_mut(&mut self) -> ndarray::iter::IndexedIterMut<P, Ix2>;
 
+    /// Return an iterator over the pixels of an image row in left to right order.
+    fn row_mut(&mut self, y: u32) -> Option<RowIterMut<P>>;
+
     /// Return a mutable iterator over the rows of an image in scanline order.
     fn rows_mut(&mut self) -> RowsIterMut<P>;
+
+    /// Return an iterator over the pixels of an image column in scanline order.
+    fn col_mut(&mut self, x: u32) -> Option<ColIterMut<P>>;
 
     /// Return a mutable iterator over the columns of an image in left to right order.
     fn cols_mut(&mut self) -> ColsIterMut<P>;
@@ -211,8 +223,24 @@ impl<D, P> Image2D<P> for Image2DRepr<D, P>
         self.buffer.indexed_iter()
     }
 
+    fn row(&self, y: u32) -> Option<RowIter<P>> {
+        if y < self.height()
+        {
+            Some(RowIter { iter: self.buffer.slice(s![y as usize, ..]).into_iter() })
+        }
+        else { None }
+    }
+
     fn rows(&self) -> RowsIter<P> {
         RowsIter { iter: self.buffer.axis_iter(Axis(0)) }
+    }
+
+    fn col(&self, x: u32) -> Option<ColIter<P>> {
+        if x < self.width()
+        {
+            Some(ColIter { iter: self.buffer.slice(s![.., x as usize]).into_iter() })
+        }
+        else { None }
     }
 
     fn cols(&self) -> ColsIter<P> {
@@ -253,8 +281,22 @@ impl<D, P> Image2DMut<P> for Image2DRepr<D, P>
         self.buffer.indexed_iter_mut()
     }
 
+    fn row_mut(&mut self, y: u32) -> Option<RowIterMut<P>> {
+        if y < self.height() {
+            Some(RowIterMut { iter: self.buffer.slice_mut(s![y as usize, ..]).into_iter() })
+        }
+        else { None }
+    }
+
     fn rows_mut(&mut self) -> RowsIterMut<P> {
         RowsIterMut { iter: self.buffer.axis_iter_mut(Axis(0)) }
+    }
+
+    fn col_mut(&mut self, x: u32) -> Option<ColIterMut<P>> {
+        if x < self.width() {
+            Some(ColIterMut { iter: self.buffer.slice_mut(s![.., x as usize]).into_iter() })
+        }
+        else { None }
     }
 
     fn cols_mut(&mut self) -> ColsIterMut<P> {
@@ -376,6 +418,40 @@ impl<P> ImageBuffer2D<P>
     }
 }
 
+/// Iterator over the pixels of an image row.
+pub struct RowIter<'a, P>
+    where P: Pixel + 'a
+{
+    iter: ndarray::iter::Iter<'a, P, Ix1>
+}
+
+impl<'a, P> Iterator for RowIter<'a, P>
+    where P: Pixel + 'a
+{
+    type Item = &'a P;
+
+    fn next(&mut self) -> Option<&'a P> {
+        self.iter.next()
+    }
+}
+
+/// Mutable iterator over the pixels of an image row.
+pub struct RowIterMut<'a, P>
+    where P: Pixel + 'a
+{
+    iter: ndarray::iter::IterMut<'a, P, Ix1>
+}
+
+impl<'a, P> Iterator for RowIterMut<'a, P>
+    where P: Pixel + 'a
+{
+    type Item = &'a mut P;
+
+    fn next(&mut self) -> Option<&'a mut P> {
+        self.iter.next()
+    }
+}
+
 /// Iterator over the rows of an image.
 pub struct RowsIter<'a, P>
     where P: Pixel + 'a
@@ -406,6 +482,40 @@ impl<'a, P> Iterator for RowsIterMut<'a, P>
     type Item = ndarray::ArrayViewMut<'a, P, Ix1>;
 
     fn next(&mut self) -> Option<ndarray::ArrayViewMut<'a, P, Ix1>> {
+        self.iter.next()
+    }
+}
+
+/// Iterator over the pixels of an image column.
+pub struct ColIter<'a, P>
+    where P: Pixel + 'a
+{
+    iter: ndarray::iter::Iter<'a, P, Ix1>
+}
+
+impl<'a, P> Iterator for ColIter<'a, P>
+    where P: Pixel + 'a
+{
+    type Item = &'a P;
+
+    fn next(&mut self) -> Option<&'a P> {
+        self.iter.next()
+    }
+}
+
+/// Mutable iterator over the pixels of an image column.
+pub struct ColIterMut<'a, P>
+    where P: Pixel + 'a
+{
+    iter: ndarray::iter::IterMut<'a, P, Ix1>
+}
+
+impl<'a, P> Iterator for ColIterMut<'a, P>
+    where P: Pixel + 'a
+{
+    type Item = &'a mut P;
+
+    fn next(&mut self) -> Option<&'a mut P> {
         self.iter.next()
     }
 }
@@ -571,6 +681,46 @@ mod tests {
     }
 
     #[test]
+    fn test_row() {
+        let v = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let img = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v).unwrap();
+        let row0 = img.row(0).unwrap();
+        let row1 = img.row(1).unwrap();
+        let row2 = img.row(2).unwrap();
+        let row_out = img.row(3);
+        assert_eq!(row0.collect::<Vec<&Luma<u8>>>(), vec![&Luma::new([0]), &Luma::new([1]), &Luma::new([2])]);
+        assert_eq!(row1.collect::<Vec<&Luma<u8>>>(), vec![&Luma::new([3]), &Luma::new([4]), &Luma::new([5])]);
+        assert_eq!(row2.collect::<Vec<&Luma<u8>>>(), vec![&Luma::new([6]), &Luma::new([7]), &Luma::new([8])]);
+        assert!(row_out.is_none());
+    }
+
+    #[test]
+    fn test_row_mut() {
+        let v = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let mut img = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v).unwrap();
+        {
+            let row0 = img.row_mut(0).unwrap();
+            row0.map(|pix| *pix = Luma::new([pix.data[0] * 2u8])).count();
+        }
+        {
+            let row1 = img.row_mut(1).unwrap();
+            row1.map(|pix| *pix = Luma::new([pix.data[0] * 3u8])).count();
+        }
+        {
+            let row2 = img.row_mut(2).unwrap();
+            row2.map(|pix| *pix = Luma::new([pix.data[0] * 4u8])).count();
+        }
+        {
+            let row_out = img.row_mut(3);
+            assert!(row_out.is_none());
+        }
+        assert_eq!(img.into_raw_vec(),
+                   vec![Luma::new([0]), Luma::new([2]), Luma::new([4]),
+                        Luma::new([9]), Luma::new([12]), Luma::new([15]),
+                        Luma::new([24]), Luma::new([28]), Luma::new([32])]);
+    }
+
+    #[test]
     fn test_rows() {
         let v = [0, 1, 2, 3, 4, 5, 6, 7, 8];
         let img = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v).unwrap();
@@ -600,6 +750,46 @@ mod tests {
                 assert_eq!(pix, &Luma::new([3 * x as u8 + 5 * y as u8]))
             }
         }
+    }
+
+    #[test]
+    fn test_col() {
+        let v = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let img = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v).unwrap();
+        let col0 = img.col(0).unwrap();
+        let col1 = img.col(1).unwrap();
+        let col2 = img.col(2).unwrap();
+        let col_out = img.col(3);
+        assert_eq!(col0.collect::<Vec<&Luma<u8>>>(), vec![&Luma::new([0]), &Luma::new([3]), &Luma::new([6])]);
+        assert_eq!(col1.collect::<Vec<&Luma<u8>>>(), vec![&Luma::new([1]), &Luma::new([4]), &Luma::new([7])]);
+        assert_eq!(col2.collect::<Vec<&Luma<u8>>>(), vec![&Luma::new([2]), &Luma::new([5]), &Luma::new([8])]);
+        assert!(col_out.is_none());
+    }
+
+    #[test]
+    fn test_col_mut() {
+        let v = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let mut img = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v).unwrap();
+        {
+            let col0 = img.col_mut(0).unwrap();
+            col0.map(|pix| *pix = Luma::new([pix.data[0] * 2u8])).count();
+        }
+        {
+            let col1 = img.col_mut(1).unwrap();
+            col1.map(|pix| *pix = Luma::new([pix.data[0] * 3u8])).count();
+        }
+        {
+            let col2 = img.col_mut(2).unwrap();
+            col2.map(|pix| *pix = Luma::new([pix.data[0] * 4u8])).count();
+        }
+        {
+            let col_out = img.col_mut(3);
+            assert!(col_out.is_none());
+        }
+        assert_eq!(img.into_raw_vec(),
+                   vec![Luma::new([0]), Luma::new([3]), Luma::new([8]),
+                        Luma::new([6]), Luma::new([12]), Luma::new([20]),
+                        Luma::new([12]), Luma::new([21]), Luma::new([32])]);
     }
 
     #[test]

@@ -2,6 +2,7 @@
 
 mod image2d;
 mod neighborhood;
+pub mod padding;
 mod pixel_types;
 mod rect;
 mod traits;

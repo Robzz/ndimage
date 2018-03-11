@@ -17,4 +17,5 @@ png = "0.11.*"
 rand = { version = "0.4.*", optional = true }
 
 [dev-dependencies]
+clap = "2.31.1"
 image = "0.18.0"

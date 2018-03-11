@@ -7,7 +7,7 @@ use num_traits::{Zero};
 #[cfg(feature="rand_integration")] use rand::{Rand, Rng};
 
 use std::cmp::min;
-use std::iter::{IntoIterator};
+use std::iter::{IntoIterator, ExactSizeIterator};
 
 use core::{Luma, LumaA, Rgb, RgbA, Rect, Pixel, Primitive};
 
@@ -418,175 +418,60 @@ impl<P> ImageBuffer2D<P>
     }
 }
 
-/// Iterator over the pixels of an image row.
-pub struct RowIter<'a, P>
-    where P: Pixel + 'a
-{
-    iter: ndarray::iter::Iter<'a, P, Ix1>
+macro_rules! impl_iterators {
+    ( $( $(#[$attr:meta])* $name:ident: $t:ty);+ ) => {
+        $(
+        $( #[$attr] )*
+        pub struct $name<'a, P>
+            where P: Pixel + 'a
+        {
+            iter: $t
+        }
+
+        impl<'a, P> Iterator for $name<'a, P>
+            where P: Pixel + 'a
+        {
+            type Item = <$t as Iterator>::Item;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                self.iter.next()
+            }
+        }
+
+        impl<'a, P> ExactSizeIterator for $name<'a, P>
+            where P: Pixel + 'a
+        {
+            fn len(&self) -> usize {
+                self.iter.len()
+            }
+        }
+        )+
+    };
 }
 
-impl<'a, P> Iterator for RowIter<'a, P>
-    where P: Pixel + 'a
-{
-    type Item = &'a P;
+impl_iterators!(
+    /// Iterator over the pixels of an image row.
+    RowIter: ndarray::iter::Iter<'a, P, Ix1>;
+    /// Mutable iterator over the pixels of an image row.
+    RowIterMut: ndarray::iter::IterMut<'a, P, Ix1>;
+    /// Iterator over the rows of an image.
+    RowsIter: ndarray::iter::AxisIter<'a, P, Ix1>;
+    /// Mutable iterator over the rows of an image.
+    RowsIterMut: ndarray::iter::AxisIterMut<'a, P, Ix1>;
+    /// Iterator over the pixels of an image column.
+    ColIter: ndarray::iter::Iter<'a, P, Ix1>;
+    /// Mutable iterator over the pixels of an image column.
+    ColIterMut: ndarray::iter::IterMut<'a, P, Ix1>;
+    /// Iterator over the columns of an image.
+    ColsIter: ndarray::iter::AxisIter<'a, P, Ix1>;
+    /// Mutable iterator over the columns of an image.
+    ColsIterMut: ndarray::iter::AxisIterMut<'a, P, Ix1>;
+    /// Iterator over a rectangular region. Created by `Image2D`'s `rect_iter` method.
+    RectIter: Iter<'a, P>;
+    /// Mutable iterator over a rectangular region. Created by `Image2DMut`'s `rect_iter_mut` method.
+    RectIterMut: IterMut<'a, P>
+);
 
-    fn next(&mut self) -> Option<&'a P> {
-        self.iter.next()
-    }
-}
-
-/// Mutable iterator over the pixels of an image row.
-pub struct RowIterMut<'a, P>
-    where P: Pixel + 'a
-{
-    iter: ndarray::iter::IterMut<'a, P, Ix1>
-}
-
-impl<'a, P> Iterator for RowIterMut<'a, P>
-    where P: Pixel + 'a
-{
-    type Item = &'a mut P;
-
-    fn next(&mut self) -> Option<&'a mut P> {
-        self.iter.next()
-    }
-}
-
-/// Iterator over the rows of an image.
-pub struct RowsIter<'a, P>
-    where P: Pixel + 'a
-{
-    iter: ndarray::iter::AxisIter<'a, P, Ix1>
-}
-
-impl<'a, P> Iterator for RowsIter<'a, P>
-    where P: Pixel + 'a
-{
-    type Item = ndarray::ArrayView<'a, P, Ix1>;
-
-    fn next(&mut self) -> Option<ndarray::ArrayView<'a, P, Ix1>> {
-        self.iter.next()
-    }
-}
-
-/// Mutable iterator over the rows of an image.
-pub struct RowsIterMut<'a, P>
-    where P: Pixel + 'a
-{
-    iter: ndarray::iter::AxisIterMut<'a, P, Ix1>
-}
-
-impl<'a, P> Iterator for RowsIterMut<'a, P>
-    where P: Pixel + 'a
-{
-    type Item = ndarray::ArrayViewMut<'a, P, Ix1>;
-
-    fn next(&mut self) -> Option<ndarray::ArrayViewMut<'a, P, Ix1>> {
-        self.iter.next()
-    }
-}
-
-/// Iterator over the pixels of an image column.
-pub struct ColIter<'a, P>
-    where P: Pixel + 'a
-{
-    iter: ndarray::iter::Iter<'a, P, Ix1>
-}
-
-impl<'a, P> Iterator for ColIter<'a, P>
-    where P: Pixel + 'a
-{
-    type Item = &'a P;
-
-    fn next(&mut self) -> Option<&'a P> {
-        self.iter.next()
-    }
-}
-
-/// Mutable iterator over the pixels of an image column.
-pub struct ColIterMut<'a, P>
-    where P: Pixel + 'a
-{
-    iter: ndarray::iter::IterMut<'a, P, Ix1>
-}
-
-impl<'a, P> Iterator for ColIterMut<'a, P>
-    where P: Pixel + 'a
-{
-    type Item = &'a mut P;
-
-    fn next(&mut self) -> Option<&'a mut P> {
-        self.iter.next()
-    }
-}
-
-/// Iterator over the columns of an image.
-pub struct ColsIter<'a, P>
-    where P: Pixel + 'a
-{
-    iter: ndarray::iter::AxisIter<'a, P, Ix1>
-}
-
-impl<'a, P> Iterator for ColsIter<'a, P>
-    where P: Pixel + 'a
-{
-    type Item = ndarray::ArrayView<'a, P, Ix1>;
-
-    fn next(&mut self) -> Option<ndarray::ArrayView<'a, P, Ix1>> {
-        self.iter.next()
-    }
-}
-
-/// Mutable iterator over the columns of an image.
-pub struct ColsIterMut<'a, P>
-    where P: Pixel + 'a
-{
-    iter: ndarray::iter::AxisIterMut<'a, P, Ix1>
-}
-
-impl<'a, P> Iterator for ColsIterMut<'a, P>
-    where P: Pixel + 'a
-{
-    type Item = ndarray::ArrayViewMut<'a, P, Ix1>;
-
-    fn next(&mut self) -> Option<ndarray::ArrayViewMut<'a, P, Ix1>> {
-        self.iter.next()
-    }
-}
-
-/// Iterator over a rectangular region. Created by `Image2D`'s `rect_iter` method.
-pub struct RectIter<'a, P>
-    where P: Pixel + 'a
-{
-    iter: Iter<'a, P>
-}
-
-impl<'a, P> Iterator for RectIter<'a, P>
-    where P: Pixel + 'a
-{
-    type Item = &'a P;
-
-    fn next(&mut self) -> Option<&'a P> {
-        self.iter.next()
-    }
-}
-
-/// Mutable iterator over a rectangular region. Created by `Image2DMut`'s `rect_iter_mut` method.
-pub struct RectIterMut<'a, P>
-    where P: Pixel + 'a
-{
-    iter: IterMut<'a, P>
-}
-
-impl<'a, P> Iterator for RectIterMut<'a, P>
-    where P: Pixel + 'a
-{
-    type Item = &'a mut P;
-
-    fn next(&mut self) -> Option<&'a mut P> {
-        self.iter.next()
-    }
-}
 /// Discard the alpha component of an `RgbA` image.
 pub fn rgba_to_rgb<P>(img: &Image2D<RgbA<P>>) -> ImageBuffer2D<Rgb<P>>
     where P: Primitive

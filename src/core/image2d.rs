@@ -7,7 +7,7 @@ use num_traits::{Zero};
 #[cfg(feature="rand_integration")] use rand::{Rand, Rng};
 
 use std::cmp::min;
-use std::iter::{IntoIterator, ExactSizeIterator};
+use std::iter::{IntoIterator, DoubleEndedIterator, ExactSizeIterator};
 
 use core::{Luma, LumaA, Rgb, RgbA, Rect, Pixel, Primitive};
 
@@ -419,7 +419,7 @@ impl<P> ImageBuffer2D<P>
 }
 
 macro_rules! impl_iterators {
-    ( $( $(#[$attr:meta])* $name:ident: $t:ty);+ ) => {
+    ( $( $(#[$attr:meta])* $name:ident: $t:ty;)+ ) => {
         $(
         $( #[$attr] )*
         pub struct $name<'a, P>
@@ -449,7 +449,35 @@ macro_rules! impl_iterators {
     };
 }
 
+macro_rules! impl_double_ended_iterators {
+    ( $( $(#[$attr:meta])* $name:ident: $t:ty);+ ) => {
+        impl_iterators!(
+        $(
+            $( #[$attr] )*
+            $name: $t;
+        )+
+        );
+
+        $(
+        impl<'a, P> DoubleEndedIterator for $name<'a, P>
+            where P: Pixel + 'a
+        {
+            fn next_back(&mut self) -> Option<Self::Item> {
+                self.iter.next_back()
+            }
+        }
+        )+
+    };
+}
+
 impl_iterators!(
+    /// Iterator over a rectangular region. Created by `Image2D`'s `rect_iter` method.
+    RectIter: Iter<'a, P>;
+    /// Mutable iterator over a rectangular region. Created by `Image2DMut`'s `rect_iter_mut` method.
+    RectIterMut: IterMut<'a, P>;
+);
+
+impl_double_ended_iterators!(
     /// Iterator over the pixels of an image row.
     RowIter: ndarray::iter::Iter<'a, P, Ix1>;
     /// Mutable iterator over the pixels of an image row.
@@ -465,11 +493,7 @@ impl_iterators!(
     /// Iterator over the columns of an image.
     ColsIter: ndarray::iter::AxisIter<'a, P, Ix1>;
     /// Mutable iterator over the columns of an image.
-    ColsIterMut: ndarray::iter::AxisIterMut<'a, P, Ix1>;
-    /// Iterator over a rectangular region. Created by `Image2D`'s `rect_iter` method.
-    RectIter: Iter<'a, P>;
-    /// Mutable iterator over a rectangular region. Created by `Image2DMut`'s `rect_iter_mut` method.
-    RectIterMut: IterMut<'a, P>
+    ColsIterMut: ndarray::iter::AxisIterMut<'a, P, Ix1>
 );
 
 /// Discard the alpha component of an `RgbA` image.

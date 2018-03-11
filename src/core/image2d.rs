@@ -576,13 +576,7 @@ mod tests {
 
     #[test]
     fn test_enumerate_pixels() {
-        let mut v: Vec<Luma<u8>> = vec![];
-        for y in 0..3 {
-            for x in 0..5 {
-                v.push(Luma::from((2*x + 3*y) as u8));
-            }
-        }
-        let img = ImageBuffer2D::from_vec(5, 3, v.clone()).unwrap();
+        let img = ImageBuffer2D::generate(5, 3, |(x, y)| { Luma::from((2 * x + 3 * y) as u8) });
 
         for ((x, y), p) in img.enumerate_pixels().map(|((y, x), p)| ((x, y), p.channels()[0])) {
             assert_eq!((2*x + 3*y) as u8, p);
@@ -788,19 +782,7 @@ mod tests {
 
     #[test]
     fn test_sub_image() {
-        let mut v: Vec<Luma<u8>> = vec![];
-        for _x in 0..5 {
-            v.push(Luma::new([0]));
-        }
-        for y in 0..3 {
-            for x in 0..5 {
-                v.push(Luma::from((2*x + 3*(y+1)) as u8));
-            }
-        }
-        for _x in 0..5 {
-            v.push(Luma::new([0]));
-        }
-        let img = ImageBuffer2D::from_vec(5, 5, v.clone()).unwrap();
+        let img = ImageBuffer2D::generate(5, 5, |(x, y)| Luma::from(if y == 0 || y == 4 { 0u8 } else { (2 * x + 3 * y) as u8}));
         let sub_img = img.sub_image(Rect::new(1, 1, 3, 3));
 
         let mut i = 0;

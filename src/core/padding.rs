@@ -156,7 +156,7 @@ pub fn pad_mirror<P>(img: &Image2D<P>, radius: u32) -> ImageBuffer2D<P>
 
 #[cfg(test)]
 mod tests {
-    use core::{Image2D, Image2DMut, ImageBuffer2D, Pixel, Rect, Luma};
+    use core::{Image2D, Image2DMut, ImageBuffer2D, Luma};
     use core::padding::pad_zeros;
 
     use num_traits::Zero;

@@ -49,7 +49,7 @@ mod bench_ndimage {
         let r = Rect::new(320, 180, 1280, 720);
         let mut img = ImageBuffer2D::<Luma<u8>>::new(W, H);
         b.iter(|| {
-            for pix in img.rect_iter_mut(&r) {
+            for pix in img.rect_iter_mut(r) {
                 pix.data[0] = 127;
             }
         });
@@ -60,7 +60,7 @@ mod bench_ndimage {
         let r = Rect::new(320, 180, 1280, 720);
         let mut img = ImageBuffer2D::<Luma<u8>>::new(W, H);
         b.iter(|| {
-            for mut pix in &mut img.sub_image_mut(&r) {
+            for mut pix in &mut img.sub_image_mut(r) {
                 pix.data[0] = 127;
             }
         });

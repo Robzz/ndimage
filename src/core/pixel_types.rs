@@ -2,7 +2,7 @@
 
 use num_traits::{Zero, One};
 use num_traits::cast::cast;
-#[cfg(feature="rand_integration")] use rand::{Rand, Rng};
+#[cfg(feature="rand_integration")] use rand::{Rng, distributions::{Distribution, Standard}};
 
 use core::{Primitive, Pixel, PixelOps, PixelCast};
 
@@ -200,6 +200,27 @@ macro_rules! impl_pixels {
                 }
                 p
             }
+
+            #[cfg(feature = "rand_integration")]
+            fn rand<R>(rng: &mut R) -> $name<P>
+                where R: Rng,
+                      Standard: Distribution<[P; $n_channels]>,
+
+            {
+                Self { data: rng.gen() }
+            }
+
+            #[cfg(feature = "rand_integration")]
+            fn rand_with_distr<D, R>(rng: &mut R, distr: &D) -> $name<P>
+                where R: Rng,
+                      D: Distribution<P>
+            {
+                let mut data = [P::zero(); $n_channels];
+                for i in 0..$n_channels {
+                    data[i] = rng.sample(distr);
+                }
+                Self { data }
+            }
         }
 
         impl<P> PixelOps for $name<P>
@@ -220,22 +241,6 @@ macro_rules! impl_pixels {
                 for (dst, src) in other.channels_mut().into_iter().zip(self.channels().into_iter()) {
                     *dst = cast::<S, O>(src.clone()).unwrap_or(<O as Zero>::zero());
                 }
-            }
-        }
-
-        #[cfg(feature = "rand_integration")]
-        impl<P> Rand for $name<P>
-            where P: Primitive
-        {
-            fn rand<R>(rng: &mut R) -> $name<P>
-                where R: Rng
-            {
-                let mut p = [P::zero(); $n_channels];
-                for c in p.iter_mut().take($n_channels) {
-                   *c = P::rand(rng);
-                }
-
-                $name::new(p)
             }
         }
     )+}

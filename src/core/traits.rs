@@ -1,26 +1,15 @@
 //! Contains the definitions of the various traits used in this crate.
 
 use num_traits::{NumRef, RefNum, NumCast, NumOps, Zero, NumAssign};
-#[cfg(feature="rand_integration")] use rand::Rand;
+#[cfg(feature="rand_integration")] use rand::{Rng, distributions::{Distribution, Standard}};
 
 use std::fmt::{Debug, Display};
 
 /// Implemented for primitive pixel types.
-#[cfg(not(feature = "rand_integration"))]
 pub trait Primitive: Copy + Clone + Debug + Display + NumAssign + RefNum<Self> + NumCast + PartialOrd + Sync + Send { }
 
-/// Implemented for primitive pixel types.
-#[cfg(feature = "rand_integration")]
-pub trait Primitive: Copy + Clone + Debug + Display + NumAssign + RefNum<Self> + NumCast + PartialOrd + Sync + Send + Rand { }
-
-#[cfg(not(feature = "rand_integration"))]
 impl<T> Primitive for T
     where T: Copy + Clone + Debug + Display + NumAssign + RefNum<T> + NumCast + PartialOrd + Sync + Send
-{}
-
-#[cfg(feature = "rand_integration")]
-impl<T> Primitive for T
-    where T: Copy + Clone + Debug + Display + NumAssign + RefNum<T> + NumCast + PartialOrd + Sync + Send + Rand
 {}
 
 /// This trait must be implemented for the types you want to store in an image.
@@ -48,6 +37,18 @@ pub trait Pixel: Clone + PartialEq + Sync + Send {
     /// **Panics**: the length of the slice is not checked, so this function will panic if s.len() is less than the
     /// number of channels in the pixel.
     fn set_to_slice(&mut self, s: &[Self::Subpixel]);
+
+    /// Generate a random value with the Standard distribution.
+    #[cfg(feature = "rand_integration")]
+    fn rand<R>(rng: &mut R) -> Self
+        where R: Rng,
+              Standard: Distribution<Self::Subpixel>;
+
+    /// Generate a random value with the given distribution.
+    #[cfg(feature = "rand_integration")]
+    fn rand_with_distr<D, R>(rng: &mut R, distr: &D) -> Self
+        where R: Rng,
+              D: Distribution<Self::Subpixel>;
 
     /// Compute a new Pixel by applying an operation to each individual pixel component.
     fn map<F>(&self, f: F) -> Self

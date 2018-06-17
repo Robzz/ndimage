@@ -4,7 +4,7 @@ use failure::Error;
 use ndarray;
 use ndarray::prelude::*;
 use num_traits::{Zero};
-#[cfg(feature="rand_integration")] use rand::{Rand, Rng};
+#[cfg(feature="rand_integration")] use rand::{Rng, distributions::{Distribution, Standard}};
 
 use std::cmp::min;
 use std::iter::{IntoIterator, DoubleEndedIterator, ExactSizeIterator};
@@ -74,13 +74,13 @@ pub trait Image2D<P>: Sync
         else { None }
     }
 
-    /// Return an Iterator on the image pixels.
+    /// Return an Iterator over the image pixels.
     fn iter(&self) -> Iter<P>;
 
     /// Return an owned copy of the image.
     fn to_owned(&self) -> ImageBuffer2D<P>;
 
-    /// Return a view on a rectangular region of the image.
+    /// Return a view over a rectangular region of the image.
     fn sub_image(&self, rect: Rect) -> Image2DView<P>;
 }
 
@@ -408,13 +408,22 @@ impl<P> ImageBuffer2D<P>
 
 #[cfg(feature = "rand_integration")]
 impl<P> ImageBuffer2D<P>
-    where P: Pixel + Rand
+    where P: Pixel
 {
-    /// Generate a random image
+    /// Generate a random image with the Standard distribution.
     pub fn rand<R>(width: u32, height: u32, rng: &mut R) -> ImageBuffer2D<P>
-        where R: Rng
+        where R: Rng,
+              Standard: Distribution<P::Subpixel>
     {
         ImageBuffer2D::generate(width, height, |(_x, _y)| P::rand(rng))
+    }
+
+    /// Generate a random image with the given distribution
+    pub fn rand_with_distr<D, R>(width: u32, height: u32, rng: &mut R, distr: &D) -> ImageBuffer2D<P>
+        where R: Rng,
+              D: Distribution<P::Subpixel>
+    {
+        ImageBuffer2D::generate(width, height, |(_x, _y)| P::rand_with_distr(rng, distr))
     }
 }
 

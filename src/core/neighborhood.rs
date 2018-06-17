@@ -8,6 +8,7 @@ pub trait Neighborhood {
 }
 
 /// Rectangular neighborhood with a specified origin.
+#[allow(dead_code)]
 pub struct RectNeighborhood {
     size: (u32, u32),
     origin: (u32, u32)
@@ -29,9 +30,10 @@ impl RectNeighborhood {
     }
 }
 
-/// Iterator over 
-pub struct RectNeighborhoodIter {
-}
+// TODO
+// Iterator over a rectangular image region.
+//pub struct RectNeighborhoodIter {
+//}
 
 #[cfg(test)]
 mod tests {

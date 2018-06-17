@@ -2,7 +2,7 @@ extern crate clap;
 extern crate ndimage;
 
 use clap::{App, Arg};
-use ndimage::core::padding::*;
+use ndimage::core::{Luma, padding::*};
 use ndimage::io::png::{Decoder, Encoder8};
 
 use std::fs::File;
@@ -25,15 +25,19 @@ fn main() {
     let decoder = Decoder::new(&in_file).unwrap();
     let img = decoder.read_luma_u8().unwrap();
 
-    let padded_zeros = pad_zeros(&img, 10);
-    let padded_repl = pad_replicate(&img, 10);
-    let padded_wrap = pad_wrap(&img, 10);
-    let padded_mirror = pad_mirror(&img, 10);
+    let padded_constant = pad_constant(&img, (10, 10), &Luma::new([127u8]));
+    let padded_zeros = pad_zeros(&img, (10, 10));
+    let padded_repl = pad_replicate(&img, (10, 10));
+    let padded_wrap = pad_wrap(&img, (10, 10));
+    let padded_mirror = pad_mirror(&img, (10, 10));
 
+    let constant_file = File::create("padded_constant.png").unwrap();
     let zeros_file = File::create("padded_zeros.png").unwrap();
     let repl_file = File::create("padded_replication.png").unwrap();
     let wrap_file = File::create("padded_wrap.png").unwrap();
     let mirror_file = File::create("padded_mirror.png").unwrap();
+    let encoder = Encoder8::new(&padded_constant, constant_file).unwrap();
+    encoder.write().unwrap();
     let encoder = Encoder8::new(&padded_zeros, zeros_file).unwrap();
     encoder.write().unwrap();
     let encoder = Encoder8::new(&padded_repl, repl_file).unwrap();

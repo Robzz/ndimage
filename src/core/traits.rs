@@ -20,7 +20,7 @@ impl<T> Primitive for T where
 {}
 
 /// This trait must be implemented for the types you want to store in an image.
-pub trait Pixel: Clone + PartialEq + Sync + Send {
+pub trait Pixel: Clone + PartialEq + Sync + Send + Zero {
     /// Type of an individual pixel component.
     type Subpixel: Primitive;
 

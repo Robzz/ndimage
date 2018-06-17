@@ -3,7 +3,6 @@
 use failure::Error;
 use ndarray;
 use ndarray::prelude::*;
-use num_traits::Zero;
 #[cfg(feature = "rand_integration")]
 use rand::{
     distributions::{Distribution, Standard},
@@ -497,10 +496,17 @@ where
     /// Create a new owned image of specified dimensions filled with zeros.
     pub fn new(width: u32, height: u32) -> ImageBuffer2D<P>
     where
-        P: Pixel + Zero,
+        P: Pixel,
     {
         ImageBuffer2D {
             buffer: Array2::zeros((height as usize, width as usize)),
+        }
+    }
+
+    /// Create a new owned image filled with the given value.
+    pub fn from_elem(width: u32, height: u32, val: &P) -> ImageBuffer2D<P> {
+        ImageBuffer2D {
+            buffer: Array2::from_elem((height as usize, width as usize), val.clone())
         }
     }
 

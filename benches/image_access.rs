@@ -68,8 +68,7 @@ mod bench_ndimage {
             for x in 0..W {
                 if x < 320 || y < 180 || x >= 1600 || y >= 900 {
                     assert_eq!(img.get_pixel(x, y), Luma::new([0]));
-                }
-                else {
+                } else {
                     assert_eq!(img.get_pixel(x, y), Luma::new([127]));
                 }
             }
@@ -80,7 +79,7 @@ mod bench_ndimage {
 #[cfg(test)]
 mod bench_image {
     use super::*;
-    use image::{GrayImage, GenericImage, Luma};
+    use image::{GenericImage, GrayImage, Luma};
 
     #[bench]
     fn image_fill_loop_gray(b: &mut Bencher) {
@@ -119,6 +118,7 @@ mod bench_image {
     }
 
     #[bench]
+    #[allow(deprecated)]
     fn image_fill_sub_image_gray(b: &mut Bencher) {
         let mut img = GrayImage::new(W, H);
         b.iter(|| {
@@ -130,8 +130,7 @@ mod bench_image {
             for x in 0..W {
                 if x < 320 || y < 180 || x >= 1600 || y >= 900 {
                     assert_eq!(img.get_pixel(x, y), &Luma { data: [0u8] });
-                }
-                else {
+                } else {
                     assert_eq!(img.get_pixel(x, y), &Luma { data: [127u8] });
                 }
             }

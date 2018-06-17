@@ -11,7 +11,7 @@ pub trait Neighborhood {
 #[allow(dead_code)]
 pub struct RectNeighborhood {
     size: (u32, u32),
-    origin: (u32, u32)
+    origin: (u32, u32),
 }
 
 impl Neighborhood for RectNeighborhood {
@@ -25,8 +25,9 @@ impl RectNeighborhood {
     pub fn new(size: (u32, u32), origin: (u32, u32)) -> Option<RectNeighborhood> {
         if origin.0 <= size.0 && origin.1 < size.1 && size.0 > 0 && size.1 > 0 {
             Some(RectNeighborhood { size, origin })
+        } else {
+            None
         }
-        else { None }
     }
 }
 

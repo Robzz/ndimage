@@ -1,8 +1,8 @@
 //! Contains the definition of the `Rect` type and trait implementations for it.
 
-use core::{Image2D, Region, Pixel};
+use core::{Image2D, Pixel, Region};
 
-use std::cmp::{min, max};
+use std::cmp::{max, min};
 
 /// Represent a rectangle
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -10,15 +10,23 @@ pub struct Rect {
     left: u32,
     top: u32,
     width: u32,
-    height: u32
+    height: u32,
 }
 
 impl Rect {
     /// Create a new `Rect`
     pub fn new(x: u32, y: u32, w: u32, h: u32) -> Rect {
         // TODO: Result
-        assert!(w != 0 && h != 0, "Rect dimensions must be strictly positive.");
-        Rect { left: x, top: y, width: w, height: h }
+        assert!(
+            w != 0 && h != 0,
+            "Rect dimensions must be strictly positive."
+        );
+        Rect {
+            left: x,
+            top: y,
+            width: w,
+            height: h,
+        }
     }
 
     /// Return the left coordinate of the `Rect`
@@ -70,20 +78,23 @@ impl Rect {
         if left <= right && top <= bottom {
             let (w, h) = (right - left + 1, bottom - top + 1);
             Some(Rect::new(left, top, w, h))
+        } else {
+            None
         }
-        else { None }
     }
 
     /// Test whether the Rect fits in the given image.
     pub fn fits_image<P>(&self, img: &Image2D<P>) -> bool
-        where P: Pixel
+    where
+        P: Pixel,
     {
         self.right() < img.width() && self.bottom() < img.height()
     }
 
     /// Crop the `Rect` to the biggest sub-`Rect` that can fit `img` if it exists, `None` otherwise.
     pub fn crop_to_image<P>(&self, img: &Image2D<P>) -> Option<Rect>
-        where P: Pixel
+    where
+        P: Pixel,
     {
         let r = Rect::new(0, 0, img.width(), img.height());
         self.intersection(&r)
@@ -98,7 +109,7 @@ impl Region for Rect {
 
 #[cfg(test)]
 mod tests {
-    use core::{ImageBuffer2D, Rect, Luma, Region};
+    use core::{ImageBuffer2D, Luma, Rect, Region};
 
     #[test]
     fn test_rect() {
@@ -135,8 +146,7 @@ mod tests {
             for x in 0..1500 {
                 if x >= 500 && x < 1000 && y >= 500 && y < 1000 {
                     assert_eq!(r1.contains(x, y), true);
-                }
-                else {
+                } else {
                     assert_eq!(r1.contains(x, y), false);
                 }
             }

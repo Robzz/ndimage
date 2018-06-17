@@ -1,8 +1,8 @@
 extern crate ndimage;
 
-use ndimage::processing::kernel::Kernel;
-use ndimage::processing::histogram;
 use ndimage::io::png::{Decoder, Encoder8};
+use ndimage::processing::histogram;
+use ndimage::processing::kernel::Kernel;
 
 use std::env::{args, current_dir};
 use std::fs::File;

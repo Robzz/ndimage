@@ -1,13 +1,17 @@
 //! Contains the definitions of the various pixel types defined in this crate.
 
-use num_traits::{Zero, One};
 use num_traits::cast::cast;
-#[cfg(feature="rand_integration")] use rand::{Rng, distributions::{Distribution, Standard}};
+use num_traits::{One, Zero};
+#[cfg(feature = "rand_integration")]
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
 
-use core::{Primitive, Pixel, PixelOps, PixelCast};
+use core::{Pixel, PixelCast, PixelOps, Primitive};
 
 use std::convert::From;
-use std::ops::{Add, Sub, Mul, Div, Rem, Index};
+use std::ops::{Add, Div, Index, IndexMut, Mul, Rem, Sub};
 
 macro_rules! impl_pixels {
     ( $( $(#[$attr:meta])* $name:ident, $n_channels:expr);+ ) =>
@@ -166,6 +170,14 @@ macro_rules! impl_pixels {
             }
         }
 
+        impl<P> IndexMut<u8> for $name<P>
+            where P: Primitive
+        {
+            fn index_mut(&mut self, index: u8) -> &mut P {
+                &mut self.data[index as usize]
+            }
+        }
+
         impl<P> Pixel for $name<P>
             where P: Primitive
         {
@@ -258,39 +270,52 @@ impl_pixels!(
 );
 
 impl<P> From<LumaA<P>> for Luma<P>
-    where P: Primitive
+where
+    P: Primitive,
 {
     fn from(pixel: LumaA<P>) -> Luma<P> {
-        Luma { data: [pixel.data[0]] }
+        Luma {
+            data: [pixel.data[0]],
+        }
     }
 }
 
 impl<'a, P> From<&'a LumaA<P>> for Luma<P>
-    where P: Primitive
+where
+    P: Primitive,
 {
     fn from(pixel: &'a LumaA<P>) -> Luma<P> {
-        Luma { data: [pixel.data[0]] }
+        Luma {
+            data: [pixel.data[0]],
+        }
     }
 }
 
 impl<P> From<RgbA<P>> for Rgb<P>
-    where P: Primitive
+where
+    P: Primitive,
 {
     fn from(pixel: RgbA<P>) -> Rgb<P> {
-        Rgb { data: [pixel.data[0], pixel.data[1], pixel.data[2]] }
+        Rgb {
+            data: [pixel.data[0], pixel.data[1], pixel.data[2]],
+        }
     }
 }
 
 impl<'a, P> From<&'a RgbA<P>> for Rgb<P>
-    where P: Primitive
+where
+    P: Primitive,
 {
     fn from(pixel: &'a RgbA<P>) -> Rgb<P> {
-        Rgb { data: [pixel.data[0], pixel.data[1], pixel.data[2]] }
+        Rgb {
+            data: [pixel.data[0], pixel.data[1], pixel.data[2]],
+        }
     }
 }
 
 impl<P> From<P> for Luma<P>
-    where P: Primitive
+where
+    P: Primitive,
 {
     fn from(data: P) -> Luma<P> {
         Luma { data: [data] }

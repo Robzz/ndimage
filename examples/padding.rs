@@ -1,7 +1,7 @@
 extern crate clap;
 extern crate ndimage;
 
-use clap::{Arg, App};
+use clap::{App, Arg};
 use ndimage::core::padding::*;
 use ndimage::io::png::{Decoder, Encoder8};
 
@@ -9,14 +9,16 @@ use std::fs::File;
 
 fn main() {
     let matches = App::new("ndimage padding example")
-                      .version("0.0.1")
-                      .author("Robin C. <r.chavignat@gmail.com>")
-                      .about("Shows how to add padding to images")
-                      .arg(Arg::with_name("INPUT")
-                           .help("Sets the input image file")
-                           .required(true)
-                           .index(1))
-                      .get_matches();
+        .version("0.0.1")
+        .author("Robin C. <r.chavignat@gmail.com>")
+        .about("Shows how to add padding to images")
+        .arg(
+            Arg::with_name("INPUT")
+                .help("Sets the input image file")
+                .required(true)
+                .index(1),
+        )
+        .get_matches();
 
     let img_path = matches.value_of("INPUT").unwrap();
     let in_file = File::open(img_path).unwrap();

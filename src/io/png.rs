@@ -1,14 +1,14 @@
 //! PNG format encoders and decoders.
 
-use core::{Image2D, ImageBuffer2D, Pixel, Luma, LumaA, Rgb, RgbA};
+use core::{Image2D, ImageBuffer2D, Luma, LumaA, Pixel, Rgb, RgbA};
 
-use byteorder::{ByteOrder, BigEndian, ReadBytesExt};
+use byteorder::{BigEndian, ByteOrder, ReadBytesExt};
 use failure::Error;
 
 use png;
 use png::HasParameters;
 
-use std::io::{Read, Write, Cursor};
+use std::io::{Cursor, Read, Write};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Supported image channel types for PNG I/O.
@@ -20,7 +20,7 @@ pub enum ImageChannels {
     /// RGB
     RGB,
     /// RGB with alpha
-    RGBA
+    RGBA,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,10 +35,13 @@ pub enum SubpixelType {
 }
 
 /// PNG decoder type
-pub struct Decoder<R> where R: Read {
+pub struct Decoder<R>
+where
+    R: Read,
+{
     reader: png::Reader<R>,
     channels: ImageChannels,
-    subpixel: SubpixelType
+    subpixel: SubpixelType,
 }
 
 // Convert a slice of bytes in the specified byte order into a Vec of u16 values.
@@ -76,7 +79,10 @@ pub enum DecodingError {
     Decoder(#[cause] png::DecodingError),
 }
 
-impl<R> Decoder<R> where R: Read {
+impl<R> Decoder<R>
+where
+    R: Read,
+{
     /// Create a new PNG decoder object.
     pub fn new(buffer: R) -> Result<Decoder<R>, Error> {
         let mut dec = png::Decoder::new(buffer);
@@ -89,15 +95,19 @@ impl<R> Decoder<R> where R: Read {
             png::ColorType::RGB => ImageChannels::RGB,
             png::ColorType::RGBA => ImageChannels::RGBA,
             // TODO: support other types
-            _ => return Err(DecodingError::UnsupportedType(info.color_type).into())
+            _ => return Err(DecodingError::UnsupportedType(info.color_type).into()),
         };
         let subpixel = match info.bit_depth {
             png::BitDepth::Eight => SubpixelType::U8,
             png::BitDepth::Sixteen => SubpixelType::U16,
             // TODO: what to do for other pixel types ?
-            _ => return Err(DecodingError::Internal.into())
+            _ => return Err(DecodingError::Internal.into()),
         };
-        Ok(Decoder { reader, channels, subpixel })
+        Ok(Decoder {
+            reader,
+            channels,
+            subpixel,
+        })
     }
 
     /// Try reading the image as 8bit grayscale.
@@ -105,12 +115,19 @@ impl<R> Decoder<R> where R: Read {
         match (self.channels, self.subpixel) {
             (ImageChannels::Luma, SubpixelType::U8) => {
                 let buf_size = self.reader.output_buffer_size();
-                let mut buffer = vec![ 0; buf_size ];
+                let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
-                let luma_buffer = buffer.into_iter().map(|i| Luma{ data: [ i ] }).collect::<Vec<Luma<u8>>>();
-                Ok(try!(ImageBuffer2D::from_vec(self.reader.info().width, self.reader.info().height, luma_buffer)))
-            },
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into())
+                let luma_buffer = buffer
+                    .into_iter()
+                    .map(|i| Luma { data: [i] })
+                    .collect::<Vec<Luma<u8>>>();
+                Ok(try!(ImageBuffer2D::from_vec(
+                    self.reader.info().width,
+                    self.reader.info().height,
+                    luma_buffer
+                )))
+            }
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
         }
     }
 
@@ -119,12 +136,19 @@ impl<R> Decoder<R> where R: Read {
         match (self.channels, self.subpixel) {
             (ImageChannels::LumaA, SubpixelType::U8) => {
                 let buf_size = self.reader.output_buffer_size();
-                let mut buffer = vec![ 0; buf_size ];
+                let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
-                let luma_buffer = (&buffer).chunks(2).map(|s| LumaA { data: [ s[0], s[1] ] }).collect::<Vec<LumaA<u8>>>();
-                Ok(try!(ImageBuffer2D::from_vec(self.reader.info().width, self.reader.info().height, luma_buffer)))
-            },
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into())
+                let luma_buffer = (&buffer)
+                    .chunks(2)
+                    .map(|s| LumaA { data: [s[0], s[1]] })
+                    .collect::<Vec<LumaA<u8>>>();
+                Ok(try!(ImageBuffer2D::from_vec(
+                    self.reader.info().width,
+                    self.reader.info().height,
+                    luma_buffer
+                )))
+            }
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
         }
     }
 
@@ -135,15 +159,22 @@ impl<R> Decoder<R> where R: Read {
                 let buf_size = self.reader.output_buffer_size();
 
                 // Read the frame into a byte buffer
-                let mut buffer = vec![ 0; buf_size ];
+                let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
 
                 // Convert the buffer to a u16 buffer
                 let u16_buffer = try!(bytes_to_vec_u16::<BigEndian>(&buffer));
-                let luma_buffer = u16_buffer.into_iter().map(|i| Luma{ data: [ i as u16 ] }).collect::<Vec<Luma<u16>>>();
-                Ok(try!(ImageBuffer2D::from_vec(self.reader.info().width, self.reader.info().height, luma_buffer)))
-            },
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into())
+                let luma_buffer = u16_buffer
+                    .into_iter()
+                    .map(|i| Luma { data: [i as u16] })
+                    .collect::<Vec<Luma<u16>>>();
+                Ok(try!(ImageBuffer2D::from_vec(
+                    self.reader.info().width,
+                    self.reader.info().height,
+                    luma_buffer
+                )))
+            }
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
         }
     }
 
@@ -154,15 +185,22 @@ impl<R> Decoder<R> where R: Read {
                 let buf_size = self.reader.output_buffer_size();
 
                 // Read the frame into a byte buffer
-                let mut buffer = vec![ 0; buf_size ];
+                let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
 
                 // Convert the buffer to a u16 buffer
                 let u16_buffer = try!(bytes_to_vec_u16::<BigEndian>(&buffer));
-                let luma_buffer = (&u16_buffer).chunks(2).map(|s| LumaA { data: [ s[0], s[1] ] }).collect::<Vec<LumaA<u16>>>();
-                Ok(try!(ImageBuffer2D::from_vec(self.reader.info().width, self.reader.info().height, luma_buffer)))
-            },
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into())
+                let luma_buffer = (&u16_buffer)
+                    .chunks(2)
+                    .map(|s| LumaA { data: [s[0], s[1]] })
+                    .collect::<Vec<LumaA<u16>>>();
+                Ok(try!(ImageBuffer2D::from_vec(
+                    self.reader.info().width,
+                    self.reader.info().height,
+                    luma_buffer
+                )))
+            }
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
         }
     }
 
@@ -171,14 +209,21 @@ impl<R> Decoder<R> where R: Read {
         match (self.channels, self.subpixel) {
             (ImageChannels::RGB, SubpixelType::U8) => {
                 let buf_size = self.reader.output_buffer_size();
-                let mut buffer = vec![ 0; buf_size ];
+                let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
-                let rgb_buffer = (&buffer).chunks(3)
-                                         .map(|s| Rgb { data: [ s[0], s[1], s[2] ] })
-                                                 .collect::<Vec<Rgb<u8>>>();
-                Ok(try!(ImageBuffer2D::from_vec(self.reader.info().width, self.reader.info().height, rgb_buffer)))
-            },
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into())
+                let rgb_buffer = (&buffer)
+                    .chunks(3)
+                    .map(|s| Rgb {
+                        data: [s[0], s[1], s[2]],
+                    })
+                    .collect::<Vec<Rgb<u8>>>();
+                Ok(try!(ImageBuffer2D::from_vec(
+                    self.reader.info().width,
+                    self.reader.info().height,
+                    rgb_buffer
+                )))
+            }
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
         }
     }
 
@@ -187,14 +232,21 @@ impl<R> Decoder<R> where R: Read {
         match (self.channels, self.subpixel) {
             (ImageChannels::RGBA, SubpixelType::U8) => {
                 let buf_size = self.reader.output_buffer_size();
-                let mut buffer = vec![ 0; buf_size ];
+                let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
-                let rgb_buffer = (&buffer).chunks(4)
-                                         .map(|s| RgbA { data: [ s[0], s[1], s[2], s[3] ] })
-                                                 .collect::<Vec<RgbA<u8>>>();
-                Ok(try!(ImageBuffer2D::from_vec(self.reader.info().width, self.reader.info().height, rgb_buffer)))
-            },
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into())
+                let rgb_buffer = (&buffer)
+                    .chunks(4)
+                    .map(|s| RgbA {
+                        data: [s[0], s[1], s[2], s[3]],
+                    })
+                    .collect::<Vec<RgbA<u8>>>();
+                Ok(try!(ImageBuffer2D::from_vec(
+                    self.reader.info().width,
+                    self.reader.info().height,
+                    rgb_buffer
+                )))
+            }
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
         }
     }
 
@@ -204,16 +256,23 @@ impl<R> Decoder<R> where R: Read {
             (ImageChannels::RGB, SubpixelType::U16) => {
                 let buf_size = self.reader.output_buffer_size();
 
-                let mut buffer = vec![ 0; buf_size ];
+                let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
                 // Convert the buffer to a u16 buffer
                 let u16_buffer = try!(bytes_to_vec_u16::<BigEndian>(&buffer));
-                let rgb_buffer = (&u16_buffer).chunks(3)
-                                              .map(|s| Rgb { data: [ s[0], s[1], s[2] ] })
-                                              .collect::<Vec<Rgb<u16>>>();
-                Ok(try!(ImageBuffer2D::from_vec(self.reader.info().width, self.reader.info().height, rgb_buffer)))
-            },
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into())
+                let rgb_buffer = (&u16_buffer)
+                    .chunks(3)
+                    .map(|s| Rgb {
+                        data: [s[0], s[1], s[2]],
+                    })
+                    .collect::<Vec<Rgb<u16>>>();
+                Ok(try!(ImageBuffer2D::from_vec(
+                    self.reader.info().width,
+                    self.reader.info().height,
+                    rgb_buffer
+                )))
+            }
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
         }
     }
 
@@ -223,16 +282,23 @@ impl<R> Decoder<R> where R: Read {
             (ImageChannels::RGBA, SubpixelType::U16) => {
                 let buf_size = self.reader.output_buffer_size();
 
-                let mut buffer = vec![ 0; buf_size ];
+                let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
                 // Convert the buffer to a u16 buffer
                 let u16_buffer = try!(bytes_to_vec_u16::<BigEndian>(&buffer));
-                let rgb_buffer = (&u16_buffer).chunks(4)
-                                              .map(|s| RgbA { data: [ s[0], s[1], s[2], s[3] ] })
-                                              .collect::<Vec<RgbA<u16>>>();
-                Ok(try!(ImageBuffer2D::from_vec(self.reader.info().width, self.reader.info().height, rgb_buffer)))
-            },
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into())
+                let rgb_buffer = (&u16_buffer)
+                    .chunks(4)
+                    .map(|s| RgbA {
+                        data: [s[0], s[1], s[2], s[3]],
+                    })
+                    .collect::<Vec<RgbA<u16>>>();
+                Ok(try!(ImageBuffer2D::from_vec(
+                    self.reader.info().width,
+                    self.reader.info().height,
+                    rgb_buffer
+                )))
+            }
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
         }
     }
 
@@ -262,38 +328,50 @@ pub enum EncodingError {
 }
 
 /// 8bit PNG encoder type
-pub struct Encoder8<'a, W, P> where W: Write, P: Pixel<Subpixel=u8> + 'a {
+pub struct Encoder8<'a, W, P>
+where
+    W: Write,
+    P: Pixel<Subpixel = u8> + 'a,
+{
     encoder: png::Encoder<W>,
-    img: &'a Image2D<P>
+    img: &'a Image2D<P>,
 }
 
 /// 16bit PNG encoder type
-pub struct Encoder16<'a, W, P> where W: Write, P: Pixel<Subpixel=u16> + 'a {
+pub struct Encoder16<'a, W, P>
+where
+    W: Write,
+    P: Pixel<Subpixel = u16> + 'a,
+{
     encoder: png::Encoder<W>,
-    img: &'a Image2D<P>
+    img: &'a Image2D<P>,
 }
 
 impl<'a, W, P> Encoder8<'a, W, P>
-    where W: Write,
-          P: Pixel<Subpixel=u8> + 'a
+where
+    W: Write,
+    P: Pixel<Subpixel = u8> + 'a,
 {
     /// Create a new PNG encoder object.
-    pub fn new(image: &'a Image2D<P>, out: W) -> Result<Encoder8<'a, W, P>, Error>
-    {
+    pub fn new(image: &'a Image2D<P>, out: W) -> Result<Encoder8<'a, W, P>, Error> {
         let mut enc = png::Encoder::new(out, image.width(), image.height());
         enc.set(png::BitDepth::Eight).set(match P::N_CHANNELS {
             1 => png::ColorType::Grayscale,
             3 => png::ColorType::RGB,
-            _ => return Err(EncodingError::UnsupportedType().into())
+            _ => return Err(EncodingError::UnsupportedType().into()),
         });
-        Ok(Encoder8 { encoder: enc, img: image })
+        Ok(Encoder8 {
+            encoder: enc,
+            img: image,
+        })
     }
 
     /// Write to the output buffer.
     pub fn write(self) -> Result<(), Error> {
         // TODO: be more gracious
         let buffer = try!(self.img.as_slice().ok_or(EncodingError::Internal));
-        let mut u8_buffer = Vec::with_capacity((self.img.width() * self.img.height() * P::N_CHANNELS) as usize);
+        let mut u8_buffer =
+            Vec::with_capacity((self.img.width() * self.img.height() * P::N_CHANNELS) as usize);
         for pix in buffer {
             u8_buffer.extend_from_slice(pix.channels());
         }
@@ -304,26 +382,30 @@ impl<'a, W, P> Encoder8<'a, W, P>
 }
 
 impl<'a, W, P> Encoder16<'a, W, P>
-    where W: Write,
-          P: Pixel<Subpixel=u16> + 'a
+where
+    W: Write,
+    P: Pixel<Subpixel = u16> + 'a,
 {
     /// Create a new PNG encoder object.
-    pub fn new(image: &'a Image2D<P>, out: W) -> Result<Encoder16<'a, W, P>, Error>
-    {
+    pub fn new(image: &'a Image2D<P>, out: W) -> Result<Encoder16<'a, W, P>, Error> {
         let mut enc = png::Encoder::new(out, image.width(), image.height());
         enc.set(png::BitDepth::Sixteen).set(match P::N_CHANNELS {
             1 => png::ColorType::Grayscale,
             3 => png::ColorType::RGB,
-            _ => return Err(EncodingError::UnsupportedType().into())
+            _ => return Err(EncodingError::UnsupportedType().into()),
         });
-        Ok(Encoder16 { encoder: enc, img: image })
+        Ok(Encoder16 {
+            encoder: enc,
+            img: image,
+        })
     }
 
     /// Write to the output buffer.
     pub fn write(self) -> Result<(), Error> {
         // TODO: be more gracious
         let buffer = try!(self.img.as_slice().ok_or(EncodingError::Internal));
-        let mut u16_buffer = Vec::with_capacity((self.img.width() * self.img.height() * P::N_CHANNELS) as usize);
+        let mut u16_buffer =
+            Vec::with_capacity((self.img.width() * self.img.height() * P::N_CHANNELS) as usize);
         for pix in buffer {
             u16_buffer.extend_from_slice(pix.channels());
         }
@@ -342,13 +424,14 @@ mod tests {
     use num_traits::{NumCast, Zero};
 
     use std::env::current_dir;
-    use std::io::Cursor;
     use std::fmt::Debug;
     use std::fs::File;
+    use std::io::Cursor;
 
     fn mk_test_img<P, S>() -> ImageBuffer2D<P>
-        where P: Pixel<Subpixel=S> + Zero,
-              S: Primitive + Sized
+    where
+        P: Pixel<Subpixel = S> + Zero,
+        S: Primitive + Sized,
     {
         let mut img = ImageBuffer2D::new(32, 32);
         for y in 0..32 {
@@ -361,9 +444,15 @@ mod tests {
         img
     }
 
-    fn helper_test_read<F, P>(img_path: &'static str, read_fn: F, w: u32, h: u32) -> Result<ImageBuffer2D<P>, Error>
-        where F: FnOnce(Decoder<&File>) -> Result<ImageBuffer2D<P>, Error>,
-              P: Pixel,
+    fn helper_test_read<F, P>(
+        img_path: &'static str,
+        read_fn: F,
+        w: u32,
+        h: u32,
+    ) -> Result<ImageBuffer2D<P>, Error>
+    where
+        F: FnOnce(Decoder<&File>) -> Result<ImageBuffer2D<P>, Error>,
+        P: Pixel,
     {
         let mut test_img = try!(current_dir());
         test_img.push(img_path);
@@ -376,8 +465,9 @@ mod tests {
     }
 
     fn helper_test_write_roundtrip_u8<F, P>(img: ImageBuffer2D<P>, fn_decode: F)
-        where F: FnOnce(Decoder<Cursor<&[u8]>>) -> Result<ImageBuffer2D<P>, Error>,
-              P: Pixel<Subpixel=u8> + Debug
+    where
+        F: FnOnce(Decoder<Cursor<&[u8]>>) -> Result<ImageBuffer2D<P>, Error>,
+        P: Pixel<Subpixel = u8> + Debug,
     {
         let mut buf = vec![0; 200000];
         {
@@ -392,8 +482,9 @@ mod tests {
     }
 
     fn helper_test_write_roundtrip_u16<F, P>(img: ImageBuffer2D<P>, fn_decode: F)
-        where F: FnOnce(Decoder<Cursor<&[u8]>>) -> Result<ImageBuffer2D<P>, Error>,
-              P: Pixel<Subpixel=u16> + Debug
+    where
+        F: FnOnce(Decoder<Cursor<&[u8]>>) -> Result<ImageBuffer2D<P>, Error>,
+        P: Pixel<Subpixel = u16> + Debug,
     {
         let mut buf = vec![0; 200000];
         {
@@ -409,22 +500,42 @@ mod tests {
 
     #[test]
     fn test_read_luma_u8() {
-        helper_test_read("test_data/io/png/grayscale_8bit.png", |d| d.read_luma_u8(), 32, 32).unwrap();
+        helper_test_read(
+            "test_data/io/png/grayscale_8bit.png",
+            |d| d.read_luma_u8(),
+            32,
+            32,
+        ).unwrap();
     }
 
     #[test]
     fn test_read_luma_alpha_u8() {
-        helper_test_read("test_data/io/png/grayscale_alpha_8bit.png", |d| d.read_luma_alpha_u8(), 32, 32).unwrap();
+        helper_test_read(
+            "test_data/io/png/grayscale_alpha_8bit.png",
+            |d| d.read_luma_alpha_u8(),
+            32,
+            32,
+        ).unwrap();
     }
 
     #[test]
     fn test_read_luma_u16() {
-        helper_test_read("test_data/io/png/grayscale_16bit.png", |d| d.read_luma_u16(), 32, 32).unwrap();
+        helper_test_read(
+            "test_data/io/png/grayscale_16bit.png",
+            |d| d.read_luma_u16(),
+            32,
+            32,
+        ).unwrap();
     }
 
     #[test]
     fn test_read_luma_alpha_u16() {
-        helper_test_read("test_data/io/png/grayscale_alpha_16bit.png", |d| d.read_luma_alpha_u16(), 32, 32).unwrap();
+        helper_test_read(
+            "test_data/io/png/grayscale_alpha_16bit.png",
+            |d| d.read_luma_alpha_u16(),
+            32,
+            32,
+        ).unwrap();
     }
 
     #[test]
@@ -434,17 +545,32 @@ mod tests {
 
     #[test]
     fn test_read_rgb_alpha_u8() {
-        helper_test_read("test_data/io/png/rgba_8bit.png", |d| d.read_rgb_alpha_u8(), 32, 32).unwrap();
+        helper_test_read(
+            "test_data/io/png/rgba_8bit.png",
+            |d| d.read_rgb_alpha_u8(),
+            32,
+            32,
+        ).unwrap();
     }
 
     #[test]
     fn test_read_rgb_u16() {
-        helper_test_read("test_data/io/png/rgb_16bit.png", |d| d.read_rgb_u16(), 32, 32).unwrap();
+        helper_test_read(
+            "test_data/io/png/rgb_16bit.png",
+            |d| d.read_rgb_u16(),
+            32,
+            32,
+        ).unwrap();
     }
 
     #[test]
     fn test_read_rgb_alpha_u16() {
-        helper_test_read("test_data/io/png/rgba_16bit.png", |d| d.read_rgb_alpha_u16(), 32, 32).unwrap();
+        helper_test_read(
+            "test_data/io/png/rgba_16bit.png",
+            |d| d.read_rgb_alpha_u16(),
+            32,
+            32,
+        ).unwrap();
     }
 
     #[test]

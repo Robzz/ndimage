@@ -1,4 +1,4 @@
-//! PNG format encoders and decoders.
+//! PNG codec.
 
 use core::{Image2D, ImageBuffer2D, Luma, LumaA, Pixel, Rgb, RgbA};
 

@@ -10,6 +10,7 @@ extern crate num_traits;
 extern crate png;
 #[cfg(feature = "rand_integration")]
 extern crate rand;
+extern crate tiff;
 
 pub mod core;
 mod helper;

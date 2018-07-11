@@ -68,7 +68,11 @@ pub enum DecodingError {
     #[fail(display = "Internal decoder error")]
     /// Internal decoder error. These should not actually occur, please report them if you encounter any.
     Internal,
-    #[fail(display = "Incorrect pixel type, image type is {:?}({:?})", _0, _1)]
+    #[fail(
+        display = "Incorrect pixel type, image type is {:?}({:?})",
+        _0,
+        _1
+    )]
     /// The requested type is not the actual type of the image
     IncorrectPixelType(ImageChannels, SubpixelType),
     #[fail(display = "Unsupported pixel type: {:?}", _0)]

@@ -16,6 +16,31 @@ use std::ops::{Index, IndexMut};
 
 use core::{Luma, LumaA, Pixel, Primitive, Rect, Rgb, RgbA};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Type of channels in an image.
+pub enum Channels {
+    /// Single channel, i.e. grayscale.
+    Luma,
+    /// Dual channel, i.e. grayscale with alpha.
+    LumaA,
+    /// Triple channel, i.e. color.
+    Rgb,
+    /// Quad channel, i.e. color with alpha.
+    RgbA,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Bit depth of an image.
+pub enum BitDepth {
+    /// 8 bit image.
+    _8,
+    /// 16 bit image.
+    _16,
+}
+
+/// Type of an image.
+pub type ImageType = (Channels, BitDepth);
+
 /// 2-dimensional image type.
 pub trait Image2D<P>: Sync
 where

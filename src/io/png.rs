@@ -1,38 +1,18 @@
 //! PNG codec.
 
-use core::{Image2D, ImageBuffer2D, Luma, LumaA, Pixel, Rgb, RgbA};
+use core::{
+    BitDepth, Channels, DynamicImage, Image2D, ImageBuffer2D, ImageType, Luma, LumaA, Pixel, Rgb,
+    RgbA,
+};
 
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt};
 use failure::Error;
 
+use io::traits::ImageDecoder;
 use png;
 use png::HasParameters;
 
 use std::io::{Cursor, Read, Write};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-/// Supported image channel types for PNG I/O.
-pub enum ImageChannels {
-    /// Grayscale
-    Luma,
-    /// Grayscale with alpha
-    LumaA,
-    /// RGB
-    RGB,
-    /// RGB with alpha
-    RGBA,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-/// Supported subpixel types for PNG I/O.
-pub enum SubpixelType {
-    //I8,
-    /// 8bit
-    U8,
-    //I16,
-    /// 16bit
-    U16,
-}
 
 /// PNG decoder type
 pub struct Decoder<R>
@@ -40,8 +20,8 @@ where
     R: Read,
 {
     reader: png::Reader<R>,
-    channels: ImageChannels,
-    subpixel: SubpixelType,
+    channels: Channels,
+    depth: BitDepth,
 }
 
 // Convert a slice of bytes in the specified byte order into a Vec of u16 values.
@@ -74,7 +54,7 @@ pub enum DecodingError {
         _1
     )]
     /// The requested type is not the actual type of the image
-    IncorrectPixelType(ImageChannels, SubpixelType),
+    IncorrectPixelType(Channels, BitDepth),
     #[fail(display = "Unsupported pixel type: {:?}", _0)]
     /// The image type is not supported (yet) by the library.
     UnsupportedType(png::ColorType),
@@ -94,30 +74,30 @@ where
         dec.set(trans);
         let (info, reader) = try!(dec.read_info().map_err(DecodingError::Decoder));
         let channels = match info.color_type {
-            png::ColorType::Grayscale => ImageChannels::Luma,
-            png::ColorType::GrayscaleAlpha => ImageChannels::LumaA,
-            png::ColorType::RGB => ImageChannels::RGB,
-            png::ColorType::RGBA => ImageChannels::RGBA,
+            png::ColorType::Grayscale => Channels::Luma,
+            png::ColorType::GrayscaleAlpha => Channels::LumaA,
+            png::ColorType::RGB => Channels::Rgb,
+            png::ColorType::RGBA => Channels::RgbA,
             // TODO: support other types
             _ => return Err(DecodingError::UnsupportedType(info.color_type).into()),
         };
-        let subpixel = match info.bit_depth {
-            png::BitDepth::Eight => SubpixelType::U8,
-            png::BitDepth::Sixteen => SubpixelType::U16,
+        let depth = match info.bit_depth {
+            png::BitDepth::Eight => BitDepth::_8,
+            png::BitDepth::Sixteen => BitDepth::_16,
             // TODO: what to do for other pixel types ?
             _ => return Err(DecodingError::Internal.into()),
         };
         Ok(Decoder {
             reader,
             channels,
-            subpixel,
+            depth,
         })
     }
 
     /// Try reading the image as 8bit grayscale.
     pub fn read_luma_u8(mut self) -> Result<ImageBuffer2D<Luma<u8>>, Error> {
-        match (self.channels, self.subpixel) {
-            (ImageChannels::Luma, SubpixelType::U8) => {
+        match (self.channels, self.depth) {
+            (Channels::Luma, BitDepth::_8) => {
                 let buf_size = self.reader.output_buffer_size();
                 let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
@@ -131,14 +111,14 @@ where
                     luma_buffer
                 )))
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
         }
     }
 
     /// Try reading the image as 8bit grayscale with alpha.
     pub fn read_luma_alpha_u8(mut self) -> Result<ImageBuffer2D<LumaA<u8>>, Error> {
-        match (self.channels, self.subpixel) {
-            (ImageChannels::LumaA, SubpixelType::U8) => {
+        match (self.channels, self.depth) {
+            (Channels::LumaA, BitDepth::_8) => {
                 let buf_size = self.reader.output_buffer_size();
                 let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
@@ -152,14 +132,14 @@ where
                     luma_buffer
                 )))
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
         }
     }
 
     /// Try reading the image as 16bit grayscale.
     pub fn read_luma_u16(mut self) -> Result<ImageBuffer2D<Luma<u16>>, Error> {
-        match (self.channels, self.subpixel) {
-            (ImageChannels::Luma, SubpixelType::U16) => {
+        match (self.channels, self.depth) {
+            (Channels::Luma, BitDepth::_16) => {
                 let buf_size = self.reader.output_buffer_size();
 
                 // Read the frame into a byte buffer
@@ -178,14 +158,14 @@ where
                     luma_buffer
                 )))
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
         }
     }
 
     /// Try reading the image as 16bit grayscale with alpha.
     pub fn read_luma_alpha_u16(mut self) -> Result<ImageBuffer2D<LumaA<u16>>, Error> {
-        match (self.channels, self.subpixel) {
-            (ImageChannels::LumaA, SubpixelType::U16) => {
+        match (self.channels, self.depth) {
+            (Channels::LumaA, BitDepth::_16) => {
                 let buf_size = self.reader.output_buffer_size();
 
                 // Read the frame into a byte buffer
@@ -204,14 +184,14 @@ where
                     luma_buffer
                 )))
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
         }
     }
 
     /// Try reading the image as RGB 8bit.
     pub fn read_rgb_u8(mut self) -> Result<ImageBuffer2D<Rgb<u8>>, Error> {
-        match (self.channels, self.subpixel) {
-            (ImageChannels::RGB, SubpixelType::U8) => {
+        match (self.channels, self.depth) {
+            (Channels::Rgb, BitDepth::_8) => {
                 let buf_size = self.reader.output_buffer_size();
                 let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
@@ -227,14 +207,14 @@ where
                     rgb_buffer
                 )))
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
         }
     }
 
     /// Try reading the image as RGBA 8bit with alpha.
     pub fn read_rgb_alpha_u8(mut self) -> Result<ImageBuffer2D<RgbA<u8>>, Error> {
-        match (self.channels, self.subpixel) {
-            (ImageChannels::RGBA, SubpixelType::U8) => {
+        match (self.channels, self.depth) {
+            (Channels::RgbA, BitDepth::_8) => {
                 let buf_size = self.reader.output_buffer_size();
                 let mut buffer = vec![0; buf_size];
                 try!(self.reader.next_frame(&mut buffer));
@@ -250,14 +230,14 @@ where
                     rgb_buffer
                 )))
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
         }
     }
 
     /// Try reading the image as RGB 16bit.
     pub fn read_rgb_u16(mut self) -> Result<ImageBuffer2D<Rgb<u16>>, Error> {
-        match (self.channels, self.subpixel) {
-            (ImageChannels::RGB, SubpixelType::U16) => {
+        match (self.channels, self.depth) {
+            (Channels::Rgb, BitDepth::_16) => {
                 let buf_size = self.reader.output_buffer_size();
 
                 let mut buffer = vec![0; buf_size];
@@ -276,14 +256,14 @@ where
                     rgb_buffer
                 )))
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
         }
     }
 
     /// Try reading the image as RGB 16bit with alpha.
     pub fn read_rgb_alpha_u16(mut self) -> Result<ImageBuffer2D<RgbA<u16>>, Error> {
-        match (self.channels, self.subpixel) {
-            (ImageChannels::RGBA, SubpixelType::U16) => {
+        match (self.channels, self.depth) {
+            (Channels::RgbA, BitDepth::_16) => {
                 let buf_size = self.reader.output_buffer_size();
 
                 let mut buffer = vec![0; buf_size];
@@ -302,18 +282,54 @@ where
                     rgb_buffer
                 )))
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.subpixel).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
         }
     }
 
     /// Return the number of channels in the image.
-    pub fn image_channels(&self) -> ImageChannels {
+    pub fn image_channels(&self) -> Channels {
         self.channels
     }
 
-    /// Return the type of the image subpixels.
-    pub fn subpixel_type(&self) -> SubpixelType {
-        self.subpixel
+    /// Return the image bit depth.
+    pub fn depth(&self) -> BitDepth {
+        self.depth
+    }
+}
+
+impl<R> ImageDecoder for Decoder<R>
+where
+    R: Read,
+{
+    fn read_header(&mut self) -> Result<ImageType, Error> {
+        Ok((self.image_channels(), self.depth()))
+    }
+
+    fn read_image(mut self) -> Result<DynamicImage, Error> {
+        match self.read_header()? {
+            (Channels::Luma, BitDepth::_8) => {
+                Ok(DynamicImage::LumaU8(Box::new(self.read_luma_u8()?)))
+            }
+            (Channels::Luma, BitDepth::_16) => {
+                Ok(DynamicImage::LumaU16(Box::new(self.read_luma_u16()?)))
+            }
+            (Channels::LumaA, BitDepth::_8) => {
+                Ok(DynamicImage::LumaAU8(Box::new(self.read_luma_alpha_u8()?)))
+            }
+            (Channels::LumaA, BitDepth::_16) => Ok(DynamicImage::LumaAU16(Box::new(
+                self.read_luma_alpha_u16()?,
+            ))),
+            (Channels::Rgb, BitDepth::_8) => Ok(DynamicImage::RgbU8(Box::new(self.read_rgb_u8()?))),
+            (Channels::Rgb, BitDepth::_16) => {
+                Ok(DynamicImage::RgbU16(Box::new(self.read_rgb_u16()?)))
+            }
+            (Channels::RgbA, BitDepth::_8) => {
+                Ok(DynamicImage::RgbAU8(Box::new(self.read_rgb_alpha_u8()?)))
+            }
+            (Channels::RgbA, BitDepth::_16) => {
+                Ok(DynamicImage::RgbAU16(Box::new(self.read_rgb_alpha_u16()?)))
+            }
+        }
     }
 }
 

@@ -34,12 +34,12 @@ fn main() {
     let repl_file = File::create("padded_replication.png").unwrap();
     let wrap_file = File::create("padded_wrap.png").unwrap();
     let mirror_file = File::create("padded_mirror.png").unwrap();
-    let encoder = Encoder8::new(&padded_zeros, zeros_file).unwrap();
-    encoder.write().unwrap();
-    let encoder = Encoder8::new(&padded_repl, repl_file).unwrap();
-    encoder.write().unwrap();
-    let encoder = Encoder8::new(&padded_wrap, wrap_file).unwrap();
-    encoder.write().unwrap();
-    let encoder = Encoder8::new(&padded_mirror, mirror_file).unwrap();
-    encoder.write().unwrap();
+    let encoder = Encoder8::new();
+    encoder.write(zeros_file, &padded_zeros).unwrap();
+    let encoder = Encoder8::new();
+    encoder.write(repl_file, &padded_repl).unwrap();
+    let encoder = Encoder8::new();
+    encoder.write(wrap_file, &padded_wrap).unwrap();
+    let encoder = Encoder8::new();
+    encoder.write(mirror_file, &padded_mirror).unwrap();
 }

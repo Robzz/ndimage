@@ -1,8 +1,10 @@
 //! Traits related to image I/O.
 
-use core::{DynamicImage, ImageBuffer2D, ImageType, Luma, LumaA, Rgb, RgbA};
+use core::{DynamicImage, Image2D, ImageBuffer2D, ImageType, Pixel, Luma, LumaA, Rgb, RgbA};
 
 use failure::Error;
+
+use std::io::Write;
 
 /// Trait implemented by all image decoders.
 pub trait ImageDecoder: Sized {
@@ -51,4 +53,14 @@ pub trait ImageDecoder: Sized {
     fn read_rgb_alpha_u16(self) -> Result<Box<ImageBuffer2D<RgbA<u16>>>, Error> {
         self.read_image()?.as_rgb_alpha_u16()
     }
+}
+
+/// Trait implemented by all image encoders.
+pub trait ImageEncoder<W, P>: Sized
+where
+    W: Write,
+    P: Pixel
+{
+    /// Write the image to the output buffer.
+    fn write_image(self, out: W, img: &Image2D<P>) -> Result<(), Error>;
 }

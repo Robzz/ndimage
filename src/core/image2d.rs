@@ -14,20 +14,7 @@ use std::cmp::min;
 use std::iter::{DoubleEndedIterator, ExactSizeIterator, IntoIterator};
 use std::ops::{Index, IndexMut};
 
-use core::{Luma, LumaA, Pixel, Primitive, Rect, Rgb, RgbA};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-/// Type of channels in an image.
-pub enum Channels {
-    /// Single channel, i.e. grayscale.
-    Luma,
-    /// Dual channel, i.e. grayscale with alpha.
-    LumaA,
-    /// Triple channel, i.e. color.
-    Rgb,
-    /// Quad channel, i.e. color with alpha.
-    RgbA,
-}
+use core::{PixelType, Luma, LumaA, Pixel, Primitive, Rect, Rgb, RgbA};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Bit depth of an image.
@@ -39,7 +26,7 @@ pub enum BitDepth {
 }
 
 /// Type of an image.
-pub type ImageType = (Channels, BitDepth);
+pub type ImageType = (PixelType, BitDepth);
 
 /// 2-dimensional image type.
 pub trait Image2D<P>: Sync

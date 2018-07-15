@@ -1,6 +1,6 @@
 //! Definition of the dynamic image type.
 
-use core::{BitDepth, Channels, ImageBuffer2D, ImageType, Luma, LumaA, Rgb, RgbA};
+use core::{BitDepth, PixelType, ImageBuffer2D, ImageType, Luma, LumaA, Rgb, RgbA};
 
 use failure::Error;
 
@@ -58,12 +58,12 @@ impl DynamicImage {
     }
 
     /// Return the type of the image channels.
-    pub fn channels(&self) -> Channels {
+    pub fn channels(&self) -> PixelType {
         match self {
-            DynamicImage::LumaU8(_) | DynamicImage::LumaU16(_) => Channels::Luma,
-            DynamicImage::LumaAU8(_) | DynamicImage::LumaAU16(_) => Channels::LumaA,
-            DynamicImage::RgbU8(_) | DynamicImage::RgbU16(_) => Channels::Rgb,
-            DynamicImage::RgbAU8(_) | DynamicImage::RgbAU16(_) => Channels::RgbA,
+            DynamicImage::LumaU8(_) | DynamicImage::LumaU16(_) => PixelType::Luma,
+            DynamicImage::LumaAU8(_) | DynamicImage::LumaAU16(_) => PixelType::LumaA,
+            DynamicImage::RgbU8(_) | DynamicImage::RgbU16(_) => PixelType::Rgb,
+            DynamicImage::RgbAU8(_) | DynamicImage::RgbAU16(_) => PixelType::RgbA,
         }
     }
 

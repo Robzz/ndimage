@@ -13,6 +13,46 @@ use core::{Pixel, PixelCast, PixelOps, Primitive};
 use std::convert::From;
 use std::ops::{Add, Div, Index, IndexMut, Mul, Rem, Sub};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Enumerate the supported subpixel types.
+pub enum SubpixelType {
+    /// u8
+    U8,
+    /// u16
+    U16,
+    /// u32
+    U32,
+    /// u64
+    U64,
+    /// u8
+    I8,
+    /// u16
+    I16,
+    /// u32
+    I32,
+    /// u64
+    I64,
+    /// u32
+    F32,
+    /// u64
+    F64,
+    /// Intended for custom subpixel types.
+    Other
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Enumerate the supported pixel types.
+pub enum PixelType {
+    /// Single channel, i.e. grayscale.
+    Luma,
+    /// Dual channel, i.e. grayscale with alpha.
+    LumaA,
+    /// Triple channel, i.e. color.
+    Rgb,
+    /// Quad channel, i.e. color with alpha.
+    RgbA,
+}
+
 macro_rules! impl_pixels {
     ( $( $(#[$attr:meta])* $name:ident, $n_channels:expr);+ ) =>
     {$(

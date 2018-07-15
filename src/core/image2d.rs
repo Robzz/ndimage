@@ -14,7 +14,19 @@ use std::cmp::min;
 use std::iter::{DoubleEndedIterator, ExactSizeIterator, IntoIterator};
 use std::ops::{Index, IndexMut};
 
-use core::{Luma, LumaA, Pixel, Primitive, Rect, Rgb, RgbA};
+use core::{PixelType, Luma, LumaA, Pixel, Primitive, Rect, Rgb, RgbA};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Bit depth of an image.
+pub enum BitDepth {
+    /// 8 bit image.
+    _8,
+    /// 16 bit image.
+    _16,
+}
+
+/// Type of an image.
+pub type ImageType = (PixelType, BitDepth);
 
 /// 2-dimensional image type.
 pub trait Image2D<P>: Sync

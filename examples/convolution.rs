@@ -29,10 +29,10 @@ fn main() {
     let gaussian_img = gaussian_kernel.convolve(&img);
     let equalized = histogram::equalize(&img);
 
-    let encoder = Encoder8::new(&box_img, box_file).unwrap();
-    encoder.write().unwrap();
-    let encoder = Encoder8::new(&gaussian_img, gaussian_file).unwrap();
-    encoder.write().unwrap();
-    let encoder = Encoder8::new(&equalized, equalized_file).unwrap();
-    encoder.write().unwrap();
+    let encoder = Encoder8::new();
+    encoder.write(box_file, &box_img).unwrap();
+    let encoder = Encoder8::new();
+    encoder.write(gaussian_file, &gaussian_img).unwrap();
+    let encoder = Encoder8::new();
+    encoder.write(equalized_file, &equalized).unwrap();
 }

@@ -1,4 +1,4 @@
-//! Contains the definitions of the Histogram type and Histogram equalization functions.
+//! Histogram type and histogram equalization functions.
 
 use core::{Image2D, ImageBuffer2D, Luma, Pixel};
 

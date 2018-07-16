@@ -1,4 +1,4 @@
-//! Contains modules related to image I/O.
+//! Modules related to image I/O.
 
 #[macro_use]
 mod macros;

@@ -15,6 +15,7 @@ extern crate tempfile;
 extern crate tiff;
 
 pub mod core;
+pub mod features;
 mod helper;
 pub mod io;
 mod math;

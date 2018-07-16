@@ -1,4 +1,4 @@
-//! Contains the definitions of the image kernel type and the convolution operation.
+//! Kernels and image convolution.
 
 use core::{Image2D, Image2DMut, ImageBuffer2D, Pixel, Primitive, Rect};
 use helper::generic::f64_to_float;
@@ -110,6 +110,28 @@ where
         let n = d * d;
         let v = vec![f64_to_float::<T>(1. / <f64 as From<u32>>::from(n)); n as usize];
         Kernel::new(v, radius).unwrap()
+    }
+
+    /// Return a 3x3 Sobel kernel to compute the x derivative in the positive direction.
+    pub fn sobel_x_3x3() -> Kernel<T> {
+        let zero = T::zero();
+        let one = <T as NumCast>::from(1).unwrap();
+        let two = <T as NumCast>::from(2).unwrap();
+        Kernel::new(vec![-one, zero, one,
+                         -two, zero, two,
+                         -one, zero, one],
+                    1).unwrap()
+    }
+
+    /// Return a 3x3 Sobel kernel to compute the y derivative in the positive direction.
+    pub fn sobel_y_3x3() -> Kernel<T> {
+        let zero = T::zero();
+        let one = <T as NumCast>::from(1).unwrap();
+        let two = <T as NumCast>::from(2).unwrap();
+        Kernel::new(vec![-one , -two , -one,
+                          zero,  zero,  zero,
+                          one ,  two ,  one],
+                    1).unwrap()
     }
 }
 

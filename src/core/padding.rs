@@ -1,4 +1,4 @@
-//! Contains image padding functions.
+//! Image padding functions.
 
 use core::{Image2D, Image2DMut, ImageBuffer2D, Pixel, Rect};
 

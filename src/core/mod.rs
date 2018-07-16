@@ -1,4 +1,4 @@
-//! Contains the definitions of the core image types and traits.
+//! Core image types and traits.
 
 mod dynamic_image;
 mod image2d;

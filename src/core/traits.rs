@@ -1,6 +1,6 @@
 //! Contains the definitions of the various traits used in this crate.
 
-use num_traits::{NumAssign, NumCast, NumOps, NumRef, RefNum, Zero};
+use num_traits::{Bounded, NumAssign, NumCast, NumOps, NumRef, RefNum, Zero};
 #[cfg(feature = "rand_integration")]
 use rand::{
     distributions::{Distribution, Standard},
@@ -11,12 +11,12 @@ use std::fmt::{Debug, Display};
 
 /// Implemented for primitive pixel types.
 pub trait Primitive:
-    Copy + Clone + Debug + Display + NumAssign + RefNum<Self> + NumCast + PartialOrd + Sync + Send
+    Copy + Clone + Debug + Display + Bounded + NumAssign + RefNum<Self> + NumCast + PartialOrd + Sync + Send
 {
 }
 
 impl<T> Primitive for T where
-    T: Copy + Clone + Debug + Display + NumAssign + RefNum<T> + NumCast + PartialOrd + Sync + Send
+    T: Copy + Clone + Debug + Display + Bounded + NumAssign + RefNum<T> + NumCast + PartialOrd + Sync + Send
 {}
 
 /// This trait must be implemented for the types you want to store in an image.

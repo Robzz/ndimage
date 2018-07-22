@@ -1,15 +1,19 @@
 //! Kernels and image convolution.
 
-use core::{Image2D, Image2DMut, ImageBuffer2D, Pixel, Primitive, Rect};
+use core::{
+    Image2D, Image2DMut, ImageBuffer2D, Pixel, Primitive, Rect,
+    padding::*
+};
 use helper::generic::f64_to_float;
 use math;
 
 use failure::Error;
-use num_traits::{Float, NumCast, Zero};
+use num_traits::{Float, NumCast, Zero, clamp};
 
 use std::ops::Add;
 
 /// Symmetric odd kernel, whose center is the kernel origin.
+// TODO: make iterable, indexable, etc...
 #[derive(Debug)]
 pub struct Kernel<T> {
     elems: Vec<T>,
@@ -37,23 +41,26 @@ where
     }
 
     /// Convolve an image with the kernel. Uses zero-padding for borders.
-    pub fn convolve<P, S>(&self, img: &Image2D<P>) -> ImageBuffer2D<P>
+    pub fn convolve<Ps, Po, S, O>(&self, img: &Image2D<Ps>, padding: Padding) -> ImageBuffer2D<Po>
     where
-        P: Pixel<Subpixel = S> + Zero + Add,
+        Ps: Pixel<Subpixel = S> + Zero + Add,
+        Po: Pixel<Subpixel = O> + Zero,
         S: Primitive,
+        O: Primitive,
     {
+        let padded = padding.apply(img, self.radius);
         let d = 2 * self.radius + 1;
         let n_elems = d * d;
-        let n_channels = <P as Pixel>::N_CHANNELS;
-        let mut out = img.to_owned();
+        let n_channels = <Ps as Pixel>::N_CHANNELS;
+        let mut out = ImageBuffer2D::new(img.width(), img.height());
         let mut region_accu = Vec::with_capacity((n_elems * n_channels) as usize);
         let mut pix_accu_t = vec![<T as Zero>::zero(); n_channels as usize];
-        let mut pix_accu_s = vec![<S as Zero>::zero(); n_channels as usize];
+        let mut pix_accu_o = vec![<O as Zero>::zero(); n_channels as usize];
         for ((y, x), dst_pix) in out.enumerate_pixels_mut() {
-            let rx = (x as u32).saturating_sub(self.radius);
-            let ry = (y as u32).saturating_sub(self.radius);
+            let rx = x as u32;
+            let ry = y as u32;
             let rect = Rect::new(rx, ry, d, d).crop_to_image(img).unwrap();
-            for (p, e) in img.rect_iter(rect).zip(self.elems.iter()) {
+            for (p, e) in padded.rect_iter(rect).zip(self.elems.iter()) {
                 // Perform the convolution on the kernel floating point type.
                 region_accu.extend(
                     p.channels()
@@ -73,10 +80,13 @@ where
             }
             region_accu.clear();
             for i in 0_usize..n_channels as usize {
-                pix_accu_s[i] =
-                    <S as NumCast>::from::<T>(pix_accu_t[i]).unwrap_or_else(<S as Zero>::zero);
+                let max = <T as NumCast>::from::<S>(S::max_value()).unwrap();
+                let min = <T as NumCast>::from::<S>(S::min_value()).unwrap();
+                let p_t = clamp(pix_accu_t[i], min, max);
+                pix_accu_o[i] =
+                    <O as NumCast>::from::<T>(p_t).unwrap_or_else(<O as Zero>::zero);
             }
-            *dst_pix = P::from_slice(&pix_accu_s);
+            *dst_pix = Po::from_slice(&pix_accu_o);
         }
         out
     }

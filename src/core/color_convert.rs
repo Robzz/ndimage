@@ -34,6 +34,13 @@ pub struct Linear<P> where P: Pixel {
     _phantom: PhantomData<P>
 }
 
+impl<P> Linear<P> where P: Pixel {
+    /// Construct a new object representing a linear colorspace.
+    pub fn new() -> Linear<P> {
+        Linear { _phantom: PhantomData }
+    }
+}
+
 impl<P> Colorspace for Linear<P>
     where P: Pixel
 {
@@ -45,6 +52,13 @@ pub struct Gamma<P> where P: Pixel {
     /// Gamma value.
     pub gamma: f64,
     _phantom: PhantomData<P>
+}
+
+impl<P> Gamma<P> where P: Pixel {
+    /// Construct a new object representing a gamma encoded colorspace.
+    pub fn new(gamma: f64) -> Gamma<P> {
+        Gamma { gamma, _phantom: PhantomData }
+    }
 }
 
 impl<P> Colorspace for Gamma<P>
@@ -59,6 +73,13 @@ pub struct Luminance<S> where S: Primitive
     _phantom: PhantomData<S>
 }
 
+impl<S> Luminance<S> where S: Primitive {
+    /// Construct a new object representing a single channel colorspace with values representing luminance.
+    pub fn new() -> Luminance<S> {
+        Luminance { _phantom: PhantomData }
+    }
+}
+
 impl<S> Colorspace for Luminance<S> where S: Primitive
 {
     type Pixel = PLuma<S>;
@@ -68,6 +89,13 @@ impl<S> Colorspace for Luminance<S> where S: Primitive
 pub struct Luma<S> where S: Primitive
 {
     _phantom: PhantomData<S>
+}
+
+impl<S> Luma<S> where S: Primitive {
+    /// Construct a new object representing a single channel colorspace with values representing luma.
+    pub fn new() -> Luma<S> {
+        Luma { _phantom: PhantomData }
+    }
 }
 
 impl<S> Colorspace for Luma<S> where S: Primitive

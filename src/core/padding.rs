@@ -4,6 +4,34 @@ use core::{Image2D, Image2DMut, ImageBuffer2D, Pixel, Rect};
 
 use num_traits::Zero;
 
+/// Padding types
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Padding {
+    /// Zero padding.
+    Zero,
+    /// Replicate borders.
+    Replicate,
+    /// Wrap around.
+    Wrap,
+    /// Mirror borders.
+    Mirror
+}
+
+impl Padding {
+    /// Apply the padding to an image.
+    pub fn apply<P>(&self, img: &Image2D<P>, radius: u32) -> ImageBuffer2D<P>
+    where
+        P: Pixel + Zero
+    {
+        match self {
+            Padding::Zero => pad_zeros(img, radius),
+            Padding::Replicate => pad_replicate(img, radius),
+            Padding::Wrap => pad_wrap(img, radius),
+            Padding::Mirror => pad_mirror(img, radius)
+        }
+    }
+}
+
 /// Pad an image with zeros.
 pub fn pad_zeros<P>(img: &Image2D<P>, radius: u32) -> ImageBuffer2D<P>
 where

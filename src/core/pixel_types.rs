@@ -8,10 +8,10 @@ use rand::{
     Rng,
 };
 
-use core::{Pixel, PixelCast, PixelOps, Primitive};
+use core::{Pixel, PixelCast, Primitive};
 
 use std::convert::From;
-use std::ops::{Add, Div, Index, IndexMut, Mul, Rem, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Enumerate the supported subpixel types.
@@ -53,6 +53,168 @@ pub enum PixelType {
     RgbA,
 }
 
+// TODO: impl_op! macro
+
+macro_rules! impl_pixel_op {
+    ($pix_t:ident : $n_channels:expr, $op:ident, $op_fn:ident) => {
+        impl<P> $op for $pix_t<P>
+            where P: Primitive
+        {
+            type Output = $pix_t<P>;
+
+            fn $op_fn(self, rhs: $pix_t<P>) -> $pix_t<P> {
+                let mut data = [<P as Zero>::zero(); $n_channels];
+                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
+                    *n = s.$op_fn(r);
+                }
+                $pix_t { data }
+            }
+        }
+
+        impl<'a, P> $op<$pix_t<P>> for &'a $pix_t<P>
+            where P: Primitive
+        {
+            type Output = $pix_t<P>;
+
+            fn $op_fn(self, rhs: $pix_t<P>) -> $pix_t<P> {
+                let mut data = [<P as Zero>::zero(); $n_channels];
+                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
+                    *n = s.$op_fn(r);
+                }
+                $pix_t { data }
+            }
+        }
+
+        impl<'a, P> $op<&'a $pix_t<P>> for $pix_t<P>
+            where P: Primitive
+        {
+            type Output = $pix_t<P>;
+
+            fn $op_fn(self, rhs: &'a $pix_t<P>) -> $pix_t<P> {
+                let mut data = [<P as Zero>::zero(); $n_channels];
+                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
+                    *n = s.$op_fn(r);
+                }
+                $pix_t { data }
+            }
+        }
+
+        impl<'a, 'b, P> $op<&'a $pix_t<P>> for &'b $pix_t<P>
+            where P: Primitive
+        {
+            type Output = $pix_t<P>;
+
+            fn $op_fn(self, rhs: &'a $pix_t<P>) -> $pix_t<P> {
+                let mut data = [<P as Zero>::zero(); $n_channels];
+                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
+                    *n = s.$op_fn(r);
+                }
+                $pix_t { data }
+            }
+        }
+
+        impl<P> $op<P> for $pix_t<P>
+            where P: Primitive
+        {
+            type Output = $pix_t<P>;
+
+            fn $op_fn(self, rhs: P) -> $pix_t<P> {
+                let mut data = [<P as Zero>::zero(); $n_channels];
+                for (n, s) in data.iter_mut().zip(self.data.iter()) {
+                    *n = s.$op_fn(rhs);
+                }
+                $pix_t { data }
+            }
+        }
+
+        impl<'a, P> $op<P> for &'a $pix_t<P>
+            where P: Primitive
+        {
+            type Output = $pix_t<P>;
+
+            fn $op_fn(self, rhs: P) -> $pix_t<P> {
+                let mut data = [<P as Zero>::zero(); $n_channels];
+                for (n, s) in data.iter_mut().zip(self.data.iter()) {
+                    *n = s.$op_fn(rhs);
+                }
+                $pix_t { data }
+            }
+        }
+
+        impl<'a, P> $op<&'a P> for $pix_t<P>
+            where P: Primitive
+        {
+            type Output = $pix_t<P>;
+
+            fn $op_fn(self, rhs: &'a P) -> $pix_t<P> {
+                let mut data = [<P as Zero>::zero(); $n_channels];
+                for (n, s) in data.iter_mut().zip(self.data.iter()) {
+                    *n = s.$op_fn(rhs);
+                }
+                $pix_t { data }
+            }
+        }
+
+        impl<'a, 'b, P> $op<&'a P> for &'b $pix_t<P>
+            where P: Primitive
+        {
+            type Output = $pix_t<P>;
+
+            fn $op_fn(self, rhs: &'a P) -> $pix_t<P> {
+                let mut data = [<P as Zero>::zero(); $n_channels];
+                for (n, s) in data.iter_mut().zip(self.data.iter()) {
+                    *n = s.$op_fn(rhs);
+                }
+                $pix_t { data }
+            }
+        }
+    }
+}
+
+macro_rules! impl_pixel_op_assign {
+    ($pix_t:ident : $n_channels:expr, $op:ident, $op_fn:ident) => {
+        impl<P> $op for $pix_t<P>
+            where P: Primitive
+        {
+            fn $op_fn(&mut self, rhs: $pix_t<P>) {
+                for (s, r) in self.data.iter_mut().zip(rhs.data.iter()) {
+                    s.$op_fn(*r);
+                }
+            }
+        }
+
+        impl<'a, P> $op<&'a $pix_t<P>> for $pix_t<P>
+            where P: Primitive
+        {
+            fn $op_fn(&mut self, rhs: &'a $pix_t<P>) {
+                for (s, r) in self.data.iter_mut().zip(rhs.data.iter()) {
+                    s.$op_fn(*r);
+                }
+            }
+        }
+
+        impl<P> $op<P> for $pix_t<P>
+            where P: Primitive
+        {
+            fn $op_fn(&mut self, rhs: P) {
+                for s in self.data.iter_mut() {
+                    s.$op_fn(rhs);
+                }
+            }
+        }
+
+        impl<'a, P> $op<&'a P> for $pix_t<P>
+            where P: Primitive
+        {
+            fn $op_fn(&mut self, rhs: &'a P) {
+                for s in self.data.iter_mut() {
+                    s.$op_fn(*rhs);
+                }
+            }
+        }
+    }
+}
+
 macro_rules! impl_pixels {
     ( $( $(#[$attr:meta])* $name:ident, $n_channels:expr);+ ) =>
     {$(
@@ -74,285 +236,16 @@ macro_rules! impl_pixels {
             }
         }
 
-        impl<P> Add for $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn add(self, rhs: $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s + *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, P> Add<$name<P>> for &'a $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn add(self, rhs: $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s + *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, P> Add<&'a $name<P>> for $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn add(self, rhs: &'a $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s + *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, 'b, P> Add<&'a $name<P>> for &'b $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn add(self, rhs: &'a $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s + *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<P> Sub for $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn sub(self, rhs: $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s - *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, P> Sub<$name<P>> for &'a $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn sub(self, rhs: $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s - *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, P> Sub<&'a $name<P>> for $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn sub(self, rhs: &'a $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s - *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, 'b, P> Sub<&'a $name<P>> for &'b $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn sub(self, rhs: &'a $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s - *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<P> Mul for $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn mul(self, rhs: $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s * *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, P> Mul<$name<P>> for &'a $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn mul(self, rhs: $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s * *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, P> Mul<&'a $name<P>> for $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn mul(self, rhs: &'a $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s * *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, 'b, P> Mul<&'a $name<P>> for &'b $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn mul(self, rhs: &'a $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s * *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<P> Div for $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn div(self, rhs: $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s / *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, P> Div<$name<P>> for &'a $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn div(self, rhs: $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s / *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, P> Div<&'a $name<P>> for $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn div(self, rhs: &'a $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s / *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, 'b, P> Div<&'a $name<P>> for &'b $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn div(self, rhs: &'a $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s / *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<P> Rem for $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn rem(self, rhs: $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s % *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, P> Rem<$name<P>> for &'a $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn rem(self, rhs: $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s % *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, P> Rem<&'a $name<P>> for $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn rem(self, rhs: &'a $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s % *r;
-                }
-                $name { data }
-            }
-        }
-
-        impl<'a, 'b, P> Rem<&'a $name<P>> for &'b $name<P>
-            where P: Primitive
-        {
-            type Output = $name<P>;
-
-            fn rem(self, rhs: &'a $name<P>) -> $name<P> {
-                let mut data = [<P as Zero>::zero(); $n_channels];
-                for ((n, s), r) in data.iter_mut().zip(self.data.iter()).zip(rhs.data.iter()) {
-                    *n = *s % *r;
-                }
-                $name { data }
-            }
-        }
+        impl_pixel_op!($name: $n_channels, Add, add);
+        impl_pixel_op!($name: $n_channels, Sub, sub);
+        impl_pixel_op!($name: $n_channels, Mul, mul);
+        impl_pixel_op!($name: $n_channels, Div, div);
+        impl_pixel_op!($name: $n_channels, Rem, rem);
+        impl_pixel_op_assign!($name: $n_channels, AddAssign, add_assign);
+        impl_pixel_op_assign!($name: $n_channels, SubAssign, sub_assign);
+        impl_pixel_op_assign!($name: $n_channels, MulAssign, mul_assign);
+        impl_pixel_op_assign!($name: $n_channels, DivAssign, div_assign);
+        impl_pixel_op_assign!($name: $n_channels, RemAssign, rem_assign);
 
         impl<P> Zero for $name<P>
             where P: Primitive
@@ -469,10 +362,6 @@ macro_rules! impl_pixels {
             }
         }
 
-        impl<P> PixelOps for $name<P>
-            where P: Primitive
-        { }
-
         impl<S, O> PixelCast<$name<O>, S, O> for $name<S>
             where O: Primitive,
                   S: Primitive
@@ -553,5 +442,44 @@ where
 {
     fn from(data: P) -> Luma<P> {
         Luma { data: [data] }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use core::Luma;
+
+    #[test]
+    fn test_pixel_add() {
+        let l1 = Luma::new([5u8]);
+        let l2 = Luma::new([7u8]);
+        let l3 = Luma::new([12u8]);
+        assert_eq!(&l1 + &l2, l3.clone());
+        assert_eq!(&l1 + l2.clone(), l3.clone());
+        assert_eq!(l1.clone() + &l2, l3.clone());
+        assert_eq!(l1.clone() + l2.clone(), l3.clone());
+
+        let l4 = Luma::new([17u8]);
+        assert_eq!(l3 + 5u8, l4.clone());
+        assert_eq!(l3 + &5u8, l4.clone());
+        assert_eq!(&l3 + 5u8, l4.clone());
+        assert_eq!(&l3 + &5u8, l4.clone());
+    }
+
+    #[test]
+    fn test_pixel_sub() {
+        let l1 = Luma::new([15u8]);
+        let l2 = Luma::new([7u8]);
+        let l3 = Luma::new([8u8]);
+        assert_eq!(&l1 - &l2, l3.clone());
+        assert_eq!(&l1 - l2.clone(), l3.clone());
+        assert_eq!(l1.clone() - &l2, l3.clone());
+        assert_eq!(l1.clone() - l2.clone(), l3.clone());
+
+        let l4 = Luma::new([3u8]);
+        assert_eq!(l3 - 5u8, l4.clone());
+        assert_eq!(l3 - &5u8, l4.clone());
+        assert_eq!(&l3 - 5u8, l4.clone());
+        assert_eq!(&l3 - &5u8, l4.clone());
     }
 }

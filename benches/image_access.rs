@@ -18,7 +18,7 @@ mod bench_ndimage {
     fn ndimage_fill_gray(b: &mut Bencher) {
         let mut img = ImageBuffer2D::<Luma<u8>>::new(W, H);
         b.iter(|| {
-            img.fill(Luma::new([127]));
+            img.fill(&Luma::new([127]));
         });
     }
 
@@ -67,9 +67,9 @@ mod bench_ndimage {
         for y in 0..H {
             for x in 0..W {
                 if x < 320 || y < 180 || x >= 1600 || y >= 900 {
-                    assert_eq!(img.get_pixel(x, y), Luma::new([0]));
+                    assert_eq!(img.get_pixel(x, y), &Luma::new([0]));
                 } else {
-                    assert_eq!(img.get_pixel(x, y), Luma::new([127]));
+                    assert_eq!(img.get_pixel(x, y), &Luma::new([127]));
                 }
             }
         }

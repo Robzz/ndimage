@@ -1,6 +1,6 @@
 //! Contains the definitions of the various traits used in this crate.
 
-use num_traits::{Bounded, NumAssign, NumCast, NumOps, NumRef, RefNum, Zero};
+use num_traits::{Bounded, NumAssign, NumCast, NumRef, Zero};
 #[cfg(feature = "rand_integration")]
 use rand::{
     distributions::{Distribution, Standard},
@@ -11,16 +11,16 @@ use std::fmt::{Debug, Display};
 
 /// Implemented for primitive pixel types.
 pub trait Primitive:
-    Copy + Clone + Debug + Display + Bounded + NumAssign + RefNum<Self> + NumCast + PartialOrd + Sync + Send
+    Copy + Clone + Debug + Display + Bounded + NumAssign + NumRef + NumCast + PartialOrd + Sync + Send
 {
 }
 
 impl<T> Primitive for T where
-    T: Copy + Clone + Debug + Display + Bounded + NumAssign + RefNum<T> + NumCast + PartialOrd + Sync + Send
+    T: Copy + Clone + Debug + Display + Bounded + NumAssign + NumRef + NumCast + PartialOrd + Sync + Send
 {}
 
 /// This trait must be implemented for the types you want to store in an image.
-pub trait Pixel: Clone + PartialEq + Sync + Send {
+pub trait Pixel: Clone + PartialEq + Sync + Send + Zero {
     /// Type of an individual pixel component.
     type Subpixel: Primitive;
 
@@ -80,12 +80,6 @@ pub trait Region {
     /// Return `true` if the region contains the specified point, `false` otherwise.
     fn contains(&self, x: u32, y: u32) -> bool;
 }
-
-/// Marker trait for pixel types that overload arithmetic operations.
-pub trait PixelOps: Pixel + NumOps {}
-
-/// Marker trait for borrowed pixel types that overload arithmetic operations.
-pub trait PixelOpsRef: PixelOps + NumRef {}
 
 /// Enables casts between pixel types.
 ///

@@ -11,8 +11,8 @@ jobs:
     - rust: nightly
   fast_finish: true
   include:
-    - stage: rustfmt
-      name: "Style check"
+    - stage: pre-build checks
+      name: "Rustfmt coding style conformance"
       rust: stable
       cache: false
       before_script: rustup component add rustfmt-preview
@@ -23,8 +23,8 @@ jobs:
       rust: stable
       cache:
         cargo: true
-        apt: true
-        ccache: true
+        directories:
+          - $HOME/.ccache
       addons:
         apt:
           packages:
@@ -41,8 +41,8 @@ jobs:
       rust: beta
       cache:
         cargo: true
-        apt: true
-        ccache: true
+        directories:
+          - $HOME/.ccache
       addons:
         apt:
           packages:
@@ -59,8 +59,8 @@ jobs:
       rust: nightly
       cache:
         cargo: true
-        apt: true
-        ccache: true
+        directories:
+          - $HOME/.ccache
       addons:
         apt:
           packages:
@@ -73,8 +73,15 @@ jobs:
             - libiberty-dev
       script: ./ci/travis_test.sh
       after_success: ./ci/mk_coverage.sh
+    - stage: static analysis
+      name: "Clippy"
+      rust: nightly
+      cache:
+        cargo: true
+      before_script: rustup component add clippy-preview
+      script: cargo clippy -- -D clippy
 
 stages:
-    - rustfmt
+    - pre-build checks
     - test
-    #- clippy
+    - lints

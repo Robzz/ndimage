@@ -12,13 +12,13 @@ const W: u32 = 1920;
 const H: u32 = 1080;
 
 use num_traits::{Bounded, One};
-use rand::{thread_rng, Rng, distributions::Uniform};
+use rand::{thread_rng, distributions::{Distribution, Standard, Uniform, uniform::SampleUniform}};
 use test::Bencher;
 
 #[cfg(test)]
 mod bench_ndimage {
     use super::*;
-    use ndimage::core::{Image2D, Image2DMut, ImageBuffer2D, Luma, Rect, Pixel};
+    use ndimage::core::{Image2D, ImageBuffer2D, Luma, Pixel};
 
     macro_rules! gen_benches {
         ($name:ident, $pix:ty) => {
@@ -26,7 +26,7 @@ mod bench_ndimage {
                 use super::*;
 
                 #[bench]
-                fn ndimage_add_imagebuffer2d(b: &mut Bencher) {
+                fn add_imagebuffer2d(b: &mut Bencher) {
                     let img1 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
                     let img2 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
                     b.iter(|| {
@@ -35,7 +35,7 @@ mod bench_ndimage {
                 }
 
                 #[bench]
-                fn ndimage_add_image2d(b: &mut Bencher) {
+                fn add_image2d(b: &mut Bencher) {
                     let imgbuf1 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
                     let imgbuf2 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
 
@@ -46,7 +46,7 @@ mod bench_ndimage {
                     });
                 }
                 #[bench]
-                fn ndimage_sub_imagebuffer2d(b: &mut Bencher) {
+                fn sub_imagebuffer2d(b: &mut Bencher) {
                     let img1 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
                     let img2 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
                     b.iter(|| {
@@ -55,7 +55,7 @@ mod bench_ndimage {
                 }
 
                 #[bench]
-                fn ndimage_sub_image2d(b: &mut Bencher) {
+                fn sub_image2d(b: &mut Bencher) {
                     let imgbuf1 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
                     let imgbuf2 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
 
@@ -66,7 +66,7 @@ mod bench_ndimage {
                     });
                 }
                 #[bench]
-                fn ndimage_mul_imagebuffer2d(b: &mut Bencher) {
+                fn mul_imagebuffer2d(b: &mut Bencher) {
                     let img1 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
                     let img2 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
                     b.iter(|| {
@@ -75,7 +75,7 @@ mod bench_ndimage {
                 }
 
                 #[bench]
-                fn ndimage_mul_image2d(b: &mut Bencher) {
+                fn mul_image2d(b: &mut Bencher) {
                     let imgbuf1 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
                     let imgbuf2 = ImageBuffer2D::<$pix>::rand(W, H, &mut thread_rng());
 
@@ -86,7 +86,7 @@ mod bench_ndimage {
                     });
                 }
                 #[bench]
-                fn ndimage_div_imagebuffer2d(b: &mut Bencher) {
+                fn div_imagebuffer2d(b: &mut Bencher) {
                     let d = Uniform::new(<<$pix as Pixel>::Subpixel as Bounded>::min_value() + <<$pix as Pixel>::Subpixel as One>::one(), <<$pix as Pixel>::Subpixel as Bounded>::max_value());
                     let img1 = ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
                     let img2 = ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
@@ -97,7 +97,7 @@ mod bench_ndimage {
                 }
 
                 #[bench]
-                fn ndimage_div_image2d(b: &mut Bencher) {
+                fn div_image2d(b: &mut Bencher) {
                     let d = Uniform::new(<<$pix as Pixel>::Subpixel as Bounded>::min_value() + <<$pix as Pixel>::Subpixel as One>::one(), <<$pix as Pixel>::Subpixel as Bounded>::max_value());
                     let imgbuf1 = ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
                     let imgbuf2 = ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
@@ -110,7 +110,7 @@ mod bench_ndimage {
                 }
 
                 #[bench]
-                fn ndimage_rem_imagebuffer2d(b: &mut Bencher) {
+                fn rem_imagebuffer2d(b: &mut Bencher) {
                     let d = Uniform::new(<<$pix as Pixel>::Subpixel as Bounded>::min_value() + <<$pix as Pixel>::Subpixel as One>::one(), <<$pix as Pixel>::Subpixel as Bounded>::max_value());
                     let img1 = ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
                     let img2 = ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
@@ -121,7 +121,7 @@ mod bench_ndimage {
                 }
 
                 #[bench]
-                fn ndimage_rem_image2d(b: &mut Bencher) {
+                fn rem_image2d(b: &mut Bencher) {
                     let d = Uniform::new(<<$pix as Pixel>::Subpixel as Bounded>::min_value() + <<$pix as Pixel>::Subpixel as One>::one(), <<$pix as Pixel>::Subpixel as Bounded>::max_value());
                     let imgbuf1 = ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
                     let imgbuf2 = ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
@@ -144,9 +144,14 @@ mod bench_ndimage {
 #[cfg(test)]
 mod bench_image {
     use super::*;
-    use image::{GenericImage, GrayImage, Luma, ImageBuffer, Pixel, Primitive};
+    use image::{Luma, ImageBuffer, Primitive};
 
-    fn generate_luma(width: u32, height: u32) -> ImageBuffer<Luma<u8>, Vec<u8>>
+    use rand::Rng;
+
+    fn generate_luma<S>(width: u32, height: u32) -> ImageBuffer<Luma<S>, Vec<S>>
+    where
+        S: Primitive + 'static,
+        Standard: Distribution<S>
     {
         let mut rng = thread_rng();
         let mut img = ImageBuffer::new(width, height);
@@ -156,17 +161,96 @@ mod bench_image {
         img
     }
 
-    #[bench]
-    fn image_add_imagebuffer_luma_u8(b: &mut Bencher) {
-        let img1 = generate_luma(W, H);
-        let img2 = generate_luma(W, H);
-        b.iter(|| {
-            let mut img = ImageBuffer::new(W, H);
-            for ((p1, p2), p) in img1.pixels().zip(img2.pixels()).zip(img.pixels_mut()) {
-                *p = Luma { data: [p1[0] + p2[0]] }
-            }
-        });
+    fn generate_luma_nonzero<S>(width: u32, height: u32) -> ImageBuffer<Luma<S>, Vec<S>>
+    where
+        S: Primitive + SampleUniform + Bounded + 'static,
+        Standard: Distribution<S>
+    {
+        let distr = Uniform::new(<S as One>::one(), <S as Bounded>::max_value());
+        let mut rng = thread_rng();
+        let mut img = ImageBuffer::new(width, height);
+        for pix in img.pixels_mut() {
+            *pix = Luma { data: [rng.sample(&distr)] }
+        }
+        img
     }
+
+    macro_rules! gen_benches_luma {
+        ($name:ident, $subpix:ty) => {
+            mod $name {
+                use super::*;
+
+                #[bench]
+                fn add_imagebuffer2d(b: &mut Bencher) {
+                    let img1 = generate_luma::<$subpix>(W, H);
+                    let img2 = generate_luma::<$subpix>(W, H);
+
+                    b.iter(|| {
+                        let mut img = ImageBuffer::new(W, H);
+                        for ((p1, p2), p) in img1.pixels().zip(img2.pixels()).zip(img.pixels_mut()) {
+                            *p = Luma { data: [p1[0] + p2[0]] };
+                        }
+                    });
+                }
+
+                #[bench]
+                fn sub_image2d(b: &mut Bencher) {
+                    let img1 = generate_luma::<$subpix>(W, H);
+                    let img2 = generate_luma::<$subpix>(W, H);
+
+                    b.iter(|| {
+                        let mut img = ImageBuffer::new(W, H);
+                        for ((p1, p2), p) in img1.pixels().zip(img2.pixels()).zip(img.pixels_mut()) {
+                            *p = Luma { data: [p1[0] - p2[0]] }
+                        }
+                    });
+                }
+
+                #[bench]
+                fn mul_imagebuffer2d(b: &mut Bencher) {
+                    let img1 = generate_luma::<$subpix>(W, H);
+                    let img2 = generate_luma::<$subpix>(W, H);
+
+                    b.iter(|| {
+                        let mut img = ImageBuffer::new(W, H);
+                        for ((p1, p2), p) in img1.pixels().zip(img2.pixels()).zip(img.pixels_mut()) {
+                            *p = Luma { data: [p1[0] * p2[0]] }
+                        }
+                    });
+                }
+
+                #[bench]
+                fn div_imagebuffer2d(b: &mut Bencher) {
+                    let img1 = generate_luma_nonzero::<$subpix>(W, H);
+                    let img2 = generate_luma_nonzero::<$subpix>(W, H);
+
+                    b.iter(|| {
+                        let mut img = ImageBuffer::new(W, H);
+                        for ((p1, p2), p) in img1.pixels().zip(img2.pixels()).zip(img.pixels_mut()) {
+                            *p = Luma { data: [p1[0] / p2[0]] }
+                        }
+                    });
+                }
+
+                #[bench]
+                fn rem_imagebuffer2d(b: &mut Bencher) {
+                    let img1 = generate_luma_nonzero::<$subpix>(W, H);
+                    let img2 = generate_luma_nonzero::<$subpix>(W, H);
+
+                    b.iter(|| {
+                        let mut img = ImageBuffer::new(W, H);
+                        for ((p1, p2), p) in img1.pixels().zip(img2.pixels()).zip(img.pixels_mut()) {
+                            *p = Luma { data: [p1[0] % p2[0]] }
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    gen_benches_luma!(luma_u8, u8);
+    gen_benches_luma!(luma_u32, u32);
+    gen_benches_luma!(luma_f32, f32);
 }
 
 }

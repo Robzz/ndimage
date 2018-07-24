@@ -15,7 +15,7 @@ mod bench_ndimage {
     use ndimage::core::{Image2D, Image2DMut, ImageBuffer2D, Luma, Rect};
 
     #[bench]
-    fn ndimage_fill_gray(b: &mut Bencher) {
+    fn fill_gray(b: &mut Bencher) {
         let mut img = ImageBuffer2D::<Luma<u8>>::new(W, H);
         b.iter(|| {
             img.fill(&Luma::new([127]));
@@ -23,7 +23,7 @@ mod bench_ndimage {
     }
 
     #[bench]
-    fn ndimage_fill_loop_gray(b: &mut Bencher) {
+    fn fill_loop_gray(b: &mut Bencher) {
         let mut img = ImageBuffer2D::new(W, H);
         b.iter(|| {
             for y in 0..H {
@@ -35,7 +35,7 @@ mod bench_ndimage {
     }
 
     #[bench]
-    fn ndimage_fill_iter_gray(b: &mut Bencher) {
+    fn fill_iter_gray(b: &mut Bencher) {
         let mut img = ImageBuffer2D::<Luma<u8>>::new(W, H);
         b.iter(|| {
             for pix in &mut img {
@@ -45,7 +45,7 @@ mod bench_ndimage {
     }
 
     #[bench]
-    fn ndimage_fill_rect_iter_gray(b: &mut Bencher) {
+    fn fill_rect_iter_gray(b: &mut Bencher) {
         let r = Rect::new(320, 180, 1280, 720);
         let mut img = ImageBuffer2D::<Luma<u8>>::new(W, H);
         b.iter(|| {
@@ -56,7 +56,7 @@ mod bench_ndimage {
     }
 
     #[bench]
-    fn ndimage_fill_sub_image_gray(b: &mut Bencher) {
+    fn fill_sub_gray(b: &mut Bencher) {
         let r = Rect::new(320, 180, 1280, 720);
         let mut img = ImageBuffer2D::<Luma<u8>>::new(W, H);
         b.iter(|| {
@@ -82,7 +82,7 @@ mod bench_image {
     use image::{GenericImage, GrayImage, Luma};
 
     #[bench]
-    fn image_fill_loop_gray(b: &mut Bencher) {
+    fn fill_loop_gray(b: &mut Bencher) {
         let mut img = GrayImage::new(W, H);
         b.iter(|| {
             for y in 0..H {
@@ -94,7 +94,7 @@ mod bench_image {
     }
 
     #[bench]
-    fn image_fill_loop_gray_unsafe(b: &mut Bencher) {
+    fn fill_loop_gray_unsafe(b: &mut Bencher) {
         let mut img = GrayImage::new(W, H);
         b.iter(|| {
             for y in 0..H {
@@ -108,7 +108,7 @@ mod bench_image {
     }
 
     #[bench]
-    fn image_fill_iter_gray(b: &mut Bencher) {
+    fn fill_iter_gray(b: &mut Bencher) {
         let mut img = GrayImage::new(W, H);
         b.iter(|| {
             for pix in img.pixels_mut() {
@@ -119,7 +119,7 @@ mod bench_image {
 
     #[bench]
     #[allow(deprecated)]
-    fn image_fill_sub_image_gray(b: &mut Bencher) {
+    fn fill_sub_image_gray(b: &mut Bencher) {
         let mut img = GrayImage::new(W, H);
         b.iter(|| {
             for (_x, _y, pix) in img.sub_image(320, 180, 1280, 720).pixels_mut() {

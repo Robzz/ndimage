@@ -42,6 +42,9 @@ where
     /// **Panics** if the index is out of bounds.
     fn get_pixel(&self, x: u32, y: u32) -> &P;
 
+    /// Return a view on the image.
+    fn get_view(&self) -> Image2DView<P>;
+
     /// Return the width of the image.
     fn width(&self) -> u32;
     /// Return the height of the image.
@@ -52,7 +55,6 @@ where
     }
 
     // TODO: map to u32's for coherence
-    // TODO: no more ndarray types in interface
     /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &P)
     fn enumerate_pixels(&self) -> ndarray::iter::IndexedIter<P, Ix2>;
 
@@ -136,314 +138,13 @@ where
     }
 }
 
-impl<'a, 'b, P> Add<&'a Image2D<P>> for &'b Image2D<P>
-where
-    P: Pixel,
-    &'b P: Add<&'a P, Output=P>
-{
-    type Output = Result<ImageBuffer2D<P>, Error>;
-
-    fn add(self, rhs: &'a Image2D<P>) -> Self::Output {
-        let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-        if dim_lhs != dim_rhs {
-            bail!("Image dimensions do not match");
-        }
-        let mut out = ImageBuffer2D::new(dim_lhs.0, dim_lhs.1);
-        for ((l, r), mut o) in self.into_iter().zip(rhs.into_iter()).zip((&mut out as &mut Image2DMut<P>).into_iter()) {
-            *o = l + r;
-        }
-        Ok(out)
-    }
-}
-
-impl<'a, 'b, P> Sub<&'a Image2D<P>> for &'b Image2D<P>
-where
-    P: Pixel,
-    &'b P: Sub<&'a P, Output=P>
-{
-    type Output = Result<ImageBuffer2D<P>, Error>;
-
-    fn sub(self, rhs: &'a Image2D<P>) -> Self::Output {
-        let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-        if dim_lhs != dim_rhs {
-            bail!("Image dimensions do not match");
-        }
-        let mut out = ImageBuffer2D::new(dim_lhs.0, dim_lhs.1);
-        for ((l, r), mut o) in self.into_iter().zip(rhs.into_iter()).zip((&mut out as &mut Image2DMut<P>).into_iter()) {
-            *o = l - r;
-        }
-        Ok(out)
-    }
-}
-
-impl<'a, 'b, P> Mul<&'a Image2D<P>> for &'b Image2D<P>
-where
-    P: Pixel,
-    &'b P: Mul<&'a P, Output=P>
-{
-    type Output = Result<ImageBuffer2D<P>, Error>;
-
-    fn mul(self, rhs: &'a Image2D<P>) -> Self::Output {
-        let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-        if dim_lhs != dim_rhs {
-            bail!("Image dimensions do not match");
-        }
-        let mut out = ImageBuffer2D::new(dim_lhs.0, dim_lhs.1);
-        for ((l, r), mut o) in self.into_iter().zip(rhs.into_iter()).zip((&mut out as &mut Image2DMut<P>).into_iter()) {
-            *o = l * r;
-        }
-        Ok(out)
-    }
-}
-
-impl<'a, 'b, P> Div<&'a Image2D<P>> for &'b Image2D<P>
-where
-    P: Pixel,
-    &'b P: Div<&'a P, Output=P>
-{
-    type Output = Result<ImageBuffer2D<P>, Error>;
-
-    fn div(self, rhs: &'a Image2D<P>) -> Self::Output {
-        let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-        if dim_lhs != dim_rhs {
-            bail!("Image dimensions do not match");
-        }
-        let mut out = ImageBuffer2D::new(dim_lhs.0, dim_lhs.1);
-        for ((l, r), mut o) in self.into_iter().zip(rhs.into_iter()).zip((&mut out as &mut Image2DMut<P>).into_iter()) {
-            *o = l / r;
-        }
-        Ok(out)
-    }
-}
-
-impl<'a, 'b, P> Rem<&'a Image2D<P>> for &'b Image2D<P>
-where
-    P: Pixel,
-    &'b P: Rem<&'a P, Output=P>
-{
-    type Output = Result<ImageBuffer2D<P>, Error>;
-
-    fn rem(self, rhs: &'a Image2D<P>) -> Self::Output {
-        let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-        if dim_lhs != dim_rhs {
-            bail!("Image dimensions do not match");
-        }
-        let mut out = ImageBuffer2D::new(dim_lhs.0, dim_lhs.1);
-        for ((l, r), mut o) in self.into_iter().zip(rhs.into_iter()).zip((&mut out as &mut Image2DMut<P>).into_iter()) {
-            *o = l % r;
-        }
-        Ok(out)
-    }
-}
 
 macro_rules! impl_image_op {
     ($op_name:ident, $op_fn:ident) => {
-        impl<'a, P> $op_name<Image2DRepr<OwnedRepr<P>, P>> for &'a Image2DRepr<OwnedRepr<P>, P>
-        where
-            P: Pixel,
-            &'a P: $op_name<P, Output=P>,
-            &'a ArrayBase<OwnedRepr<P>, Ix2>: $op_name<ArrayBase<OwnedRepr<P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: Image2DRepr<OwnedRepr<P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(rhs.buffer) })
-            }
-        }
-
-        impl<'a, 'b, P> $op_name<Image2DRepr<ViewRepr<&'a P>, P>> for &'b Image2DRepr<OwnedRepr<P>, P>
-        where
-            P: Pixel,
-            &'b P: $op_name<P, Output=P>,
-            &'b ArrayBase<OwnedRepr<P>, Ix2>: $op_name<ArrayBase<ViewRepr<&'a P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: Image2DRepr<ViewRepr<&'a P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(rhs.buffer) })
-            }
-        }
-
-        impl<'a, 'b, P> $op_name<Image2DRepr<OwnedRepr<P>, P>> for &'a Image2DRepr<ViewRepr<&'b P>, P>
-        where
-            P: Pixel,
-            &'a P: $op_name<P, Output=P>,
-            &'a ArrayBase<ViewRepr<&'b P>, Ix2>: $op_name<ArrayBase<OwnedRepr<P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: Image2DRepr<OwnedRepr<P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(rhs.buffer) })
-            }
-        }
-
-        impl<'a, 'b, 'c, P> $op_name<Image2DRepr<ViewRepr<&'a P>, P>> for &'b Image2DRepr<ViewRepr<&'c P>, P>
-        where
-            P: Pixel,
-            &'b P: $op_name<&'a P, Output=P>,
-            &'b ArrayBase<ViewRepr<&'c P>, Ix2>: $op_name<ArrayBase<ViewRepr<&'a P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: Image2DRepr<ViewRepr<&'a P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(rhs.buffer) })
-            }
-        }
-
-        impl<'a, P> $op_name<&'a Image2DRepr<OwnedRepr<P>, P>> for Image2DRepr<OwnedRepr<P>, P>
-        where
-            P: Pixel,
-            P: $op_name<&'a P, Output=P>,
-            ArrayBase<OwnedRepr<P>, Ix2>: $op_name<&'a ArrayBase<OwnedRepr<P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: &'a Image2DRepr<OwnedRepr<P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (self.buffer).$op_fn(&rhs.buffer) })
-            }
-        }
-
-        impl<'a, 'b, P> $op_name<&'a Image2DRepr<ViewRepr<&'b P>, P>> for Image2DRepr<OwnedRepr<P>, P>
-        where
-            P: Pixel + $op_name<P, Output=P>,
-            ArrayBase<OwnedRepr<P>, Ix2>: $op_name<&'a ArrayBase<ViewRepr<&'b P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: &'a Image2DRepr<ViewRepr<&'b P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(&rhs.buffer) })
-            }
-        }
-
-        impl<'a, 'b, P> $op_name<&'a Image2DRepr<OwnedRepr<P>, P>> for Image2DRepr<ViewRepr<&'b P>, P>
-        where
-            P: Pixel + $op_name<P, Output=P>,
-            ArrayBase<ViewRepr<&'b P>, Ix2>: $op_name<&'a ArrayBase<OwnedRepr<P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: &'a Image2DRepr<OwnedRepr<P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(&rhs.buffer) })
-            }
-        }
-
-        impl<'a, 'b, 'c, P> $op_name<&'a Image2DRepr<ViewRepr<&'b P>, P>> for Image2DRepr<ViewRepr<&'c P>, P>
-        where
-            P: Pixel + $op_name<&'b P, Output=P>,
-            ArrayBase<ViewRepr<&'c P>, Ix2>: $op_name<&'a ArrayBase<ViewRepr<&'b P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: &'a Image2DRepr<ViewRepr<&'b P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(&rhs.buffer) })
-            }
-        }
-
-        impl<P> $op_name<Image2DRepr<OwnedRepr<P>, P>> for Image2DRepr<OwnedRepr<P>, P>
-        where
-            P: Pixel,
-            P: $op_name<P, Output=P>,
-            ArrayBase<OwnedRepr<P>, Ix2>: $op_name<ArrayBase<OwnedRepr<P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: Image2DRepr<OwnedRepr<P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (self.buffer).$op_fn(rhs.buffer) })
-            }
-        }
-
-        impl<'a, P> $op_name<Image2DRepr<ViewRepr<&'a P>, P>> for Image2DRepr<OwnedRepr<P>, P>
-        where
-            P: Pixel,
-            P: $op_name<P, Output=P>,
-            ArrayBase<OwnedRepr<P>, Ix2>: $op_name<ArrayBase<ViewRepr<&'a P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: Image2DRepr<ViewRepr<&'a P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (self.buffer).$op_fn(rhs.buffer) })
-            }
-        }
-
-        impl<'a, P> $op_name<Image2DRepr<OwnedRepr<P>, P>> for Image2DRepr<ViewRepr<&'a P>, P>
-        where
-            P: Pixel,
-            P: $op_name<P, Output=P>,
-            ArrayBase<ViewRepr<&'a P>, Ix2>: $op_name<ArrayBase<OwnedRepr<P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: Image2DRepr<OwnedRepr<P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (self.buffer).$op_fn(rhs.buffer) })
-            }
-        }
-
-        impl<'a, 'b, P> $op_name<Image2DRepr<ViewRepr<&'a P>, P>> for Image2DRepr<ViewRepr<&'b P>, P>
-        where
-            P: Pixel,
-            P: $op_name<&'a P, Output=P>,
-            ArrayBase<ViewRepr<&'b P>, Ix2>: $op_name<ArrayBase<ViewRepr<&'a P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
-        {
-            type Output = Result<ImageBuffer2D<P>, Error>;
-
-            fn $op_fn(self, rhs: Image2DRepr<ViewRepr<&'a P>, P>) -> Self::Output {
-                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
-                if dim_lhs != dim_rhs {
-                    bail!("Image dimensions do not match");
-                }
-                Ok(ImageBuffer2D { buffer: (self.buffer).$op_fn(rhs.buffer) })
-            }
-        }
-
+        // &T op &T impls
         impl<'a, 'b, P> $op_name<&'a Image2DRepr<OwnedRepr<P>, P>> for &'b Image2DRepr<OwnedRepr<P>, P>
         where
-            P: Pixel,
-            &'b P: $op_name<&'a P, Output=P>,
-            &'b ArrayBase<OwnedRepr<P>, Ix2>: $op_name<&'a ArrayBase<OwnedRepr<P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
+            P: Pixel + $op_name<P, Output=P>,
         {
             type Output = Result<ImageBuffer2D<P>, Error>;
 
@@ -458,9 +159,7 @@ macro_rules! impl_image_op {
 
         impl<'a, 'b, 'c, P> $op_name<&'a Image2DRepr<ViewRepr<&'b P>, P>> for &'c Image2DRepr<OwnedRepr<P>, P>
         where
-            P: Pixel,
-            &'c P: $op_name<&'b P, Output=P>,
-            &'c ArrayBase<OwnedRepr<P>, Ix2>: $op_name<&'a ArrayBase<ViewRepr<&'b P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
+            P: Pixel + $op_name<P, Output=P>,
         {
             type Output = Result<ImageBuffer2D<P>, Error>;
 
@@ -475,9 +174,7 @@ macro_rules! impl_image_op {
 
         impl<'a, 'b, 'c, P> $op_name<&'a Image2DRepr<OwnedRepr<P>, P>> for &'b Image2DRepr<ViewRepr<&'c P>, P>
         where
-            P: Pixel,
-            &'c P: $op_name<&'a P, Output=P>,
-            &'b ArrayBase<ViewRepr<&'c P>, Ix2>: $op_name<&'a ArrayBase<OwnedRepr<P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
+            P: Pixel + $op_name<P, Output=P>,
         {
             type Output = Result<ImageBuffer2D<P>, Error>;
 
@@ -492,9 +189,7 @@ macro_rules! impl_image_op {
 
         impl<'a, 'b, 'c, 'd, P> $op_name<&'a Image2DRepr<ViewRepr<&'b P>, P>> for &'c Image2DRepr<ViewRepr<&'d P>, P>
         where
-            P: Pixel,
-            &'d P: $op_name<&'b P, Output=P>,
-            &'c ArrayBase<ViewRepr<&'d P>, Ix2>: $op_name<&'a ArrayBase<ViewRepr<&'b P>, Ix2>, Output=ArrayBase<OwnedRepr<P>, Ix2>>
+            P: Pixel + $op_name<P, Output=P>,
         {
             type Output = Result<ImageBuffer2D<P>, Error>;
 
@@ -504,6 +199,22 @@ macro_rules! impl_image_op {
                     bail!("Image dimensions do not match");
                 }
                 Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(&rhs.buffer) })
+            }
+        }
+
+        // Image2D impls
+        impl<'a, 'b, P> $op_name<&'a dyn Image2D<P>> for &'b dyn Image2D<P>
+        where
+            P: Pixel + $op_name<P, Output=P>,
+        {
+            type Output = Result<ImageBuffer2D<P>, Error>;
+
+            fn $op_fn(self, rhs: &'a Image2D<P>) -> Self::Output {
+                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
+                if dim_lhs != dim_rhs {
+                    bail!("Image dimensions do not match");
+                }
+                self.get_view().$op_fn(&rhs.get_view())
             }
         }
     }
@@ -531,7 +242,6 @@ where
     fn put_pixel(&mut self, x: u32, y: u32, pixel: P);
 
     // TODO: map to u32's for coherence
-    // TODO: no more ndarray types in interface
     /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &mut P)
     fn enumerate_pixels_mut(&mut self) -> ndarray::iter::IndexedIterMut<P, Ix2>;
 
@@ -671,6 +381,11 @@ where
 
     fn get_pixel(&self, x: u32, y: u32) -> &P {
         &self.buffer[[y as usize, x as usize]]
+    }
+
+    fn get_view(&self) -> Image2DView<P>
+    {
+        Image2DView { buffer: self.buffer.view() }
     }
 
     // TODO: map to u32's for coherence

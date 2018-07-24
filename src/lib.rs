@@ -5,7 +5,7 @@ extern crate byteorder;
 #[macro_use]
 extern crate failure;
 #[macro_use]
-extern crate ndarray;
+pub extern crate ndarray;
 extern crate num_traits;
 extern crate png;
 #[cfg(feature = "rand_integration")]

@@ -209,7 +209,7 @@ macro_rules! impl_pixel_op_assign {
             P: Primitive,
         {
             fn $op_fn(&mut self, rhs: P) {
-                for s in self.data.iter_mut() {
+                for s in &mut self.data {
                     s.$op_fn(rhs);
                 }
             }
@@ -220,7 +220,7 @@ macro_rules! impl_pixel_op_assign {
             P: Primitive,
         {
             fn $op_fn(&mut self, rhs: &'a P) {
-                for s in self.data.iter_mut() {
+                for s in &mut self.data {
                     s.$op_fn(*rhs);
                 }
             }
@@ -368,8 +368,8 @@ macro_rules! impl_pixels {
                       D: Distribution<P>
             {
                 let mut data = [P::zero(); $n_channels];
-                for i in 0..$n_channels {
-                    data[i] = rng.sample(distr);
+                for c in data.iter_mut().take($n_channels) {
+                    *c = rng.sample(distr);
                 }
                 Self { data }
             }

@@ -1,4 +1,5 @@
 //! Defines a generic 2D image type.
+#![allow(unknown_lints, deref_addrof)]
 
 use core::{Luma, LumaA, Pixel, PixelType, Primitive, Rect, Rgb, RgbA};
 

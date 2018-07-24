@@ -100,47 +100,47 @@ mod tests {
         let img_luma_u8 = open("./test_data/io/png/grayscale_8bit.png").unwrap();
         assert_eq!(img_luma_u8.image_type(), (PixelType::Luma, BitDepth::_8));
         assert!(img_luma_u8.is_luma());
-        assert!(img_luma_u8.as_luma_u8().is_ok());
+        assert!(img_luma_u8.into_luma_u8().is_ok());
         let img_luma_u16 = open("./test_data/io/png/grayscale_16bit.png").unwrap();
         assert_eq!(img_luma_u16.image_type(), (PixelType::Luma, BitDepth::_16));
         assert!(img_luma_u16.is_luma());
-        assert!(img_luma_u16.as_luma_u16().is_ok());
+        assert!(img_luma_u16.into_luma_u16().is_ok());
         let img_luma_alpha_u8 = open("./test_data/io/png/grayscale_alpha_8bit.png").unwrap();
         assert_eq!(
             img_luma_alpha_u8.image_type(),
             (PixelType::LumaA, BitDepth::_8)
         );
         assert!(img_luma_alpha_u8.is_luma_alpha());
-        assert!(img_luma_alpha_u8.as_luma_alpha_u8().is_ok());
+        assert!(img_luma_alpha_u8.into_luma_alpha_u8().is_ok());
         let img_luma_alpha_u16 = open("./test_data/io/png/grayscale_alpha_16bit.png").unwrap();
         assert_eq!(
             img_luma_alpha_u16.image_type(),
             (PixelType::LumaA, BitDepth::_16)
         );
         assert!(img_luma_alpha_u16.is_luma_alpha());
-        assert!(img_luma_alpha_u16.as_luma_alpha_u16().is_ok());
+        assert!(img_luma_alpha_u16.into_luma_alpha_u16().is_ok());
         let img_rgb_u8 = open("./test_data/io/png/rgb_8bit.png").unwrap();
         assert_eq!(img_rgb_u8.image_type(), (PixelType::Rgb, BitDepth::_8));
         assert!(img_rgb_u8.is_rgb());
-        assert!(img_rgb_u8.as_rgb_u8().is_ok());
+        assert!(img_rgb_u8.into_rgb_u8().is_ok());
         let img_rgb_u16 = open("./test_data/io/png/rgb_16bit.png").unwrap();
         assert_eq!(img_rgb_u16.image_type(), (PixelType::Rgb, BitDepth::_16));
         assert!(img_rgb_u16.is_rgb());
-        assert!(img_rgb_u16.as_rgb_u16().is_ok());
+        assert!(img_rgb_u16.into_rgb_u16().is_ok());
         let img_rgb_alpha_u8 = open("./test_data/io/png/rgba_8bit.png").unwrap();
         assert_eq!(
             img_rgb_alpha_u8.image_type(),
             (PixelType::RgbA, BitDepth::_8)
         );
         assert!(img_rgb_alpha_u8.is_rgb_alpha());
-        assert!(img_rgb_alpha_u8.as_rgb_alpha_u8().is_ok());
+        assert!(img_rgb_alpha_u8.into_rgb_alpha_u8().is_ok());
         let img_rgb_alpha_u16 = open("./test_data/io/png/rgba_16bit.png").unwrap();
         assert_eq!(
             img_rgb_alpha_u16.image_type(),
             (PixelType::RgbA, BitDepth::_16)
         );
         assert!(img_rgb_alpha_u16.is_rgb_alpha());
-        assert!(img_rgb_alpha_u16.as_rgb_alpha_u16().is_ok());
+        assert!(img_rgb_alpha_u16.into_rgb_alpha_u16().is_ok());
     }
 
     #[test]
@@ -148,41 +148,41 @@ mod tests {
         let img_luma_u8 = open("./test_data/io/tiff/grayscale_8bit.tiff").unwrap();
         assert_eq!(img_luma_u8.image_type(), (PixelType::Luma, BitDepth::_8));
         assert!(img_luma_u8.is_luma());
-        assert!(img_luma_u8.as_luma_u8().is_ok());
+        assert!(img_luma_u8.into_luma_u8().is_ok());
         let img_luma_u16 = open("./test_data/io/tiff/grayscale_16bit.tiff").unwrap();
         assert_eq!(img_luma_u16.image_type(), (PixelType::Luma, BitDepth::_16));
         assert!(img_luma_u16.is_luma());
-        assert!(img_luma_u16.as_luma_u16().is_ok());
+        assert!(img_luma_u16.into_luma_u16().is_ok());
         //let img_luma_alpha_u8 = open("./test_data/io/tiff/grayscale_alpha_8bit.tiff").unwrap();
         //assert_eq!(img_luma_alpha_u8.image_type(), (PixelType::LumaA, BitDepth::_8));
         //assert!(img_luma_alpha_u8.is_luma_alpha());
-        //assert!(img_luma_alpha_u8.as_luma_alpha_u8().is_ok());
+        //assert!(img_luma_alpha_u8.into_luma_alpha_u8().is_ok());
         //let img_luma_alpha_u16 = open("./test_data/io/tiff/grayscale_alpha_16bit.tiff").unwrap();
         //assert_eq!(img_luma_alpha_u16.image_type(), (PixelType::LumaA, BitDepth::_16));
         //assert!(img_luma_alpha_u16.is_luma_alpha());
-        //assert!(img_luma_alpha_u16.as_luma_alpha_u16().is_ok());
+        //assert!(img_luma_alpha_u16.into_luma_alpha_u16().is_ok());
         let img_rgb_u8 = open("./test_data/io/tiff/rgb_8bit.tiff").unwrap();
         assert_eq!(img_rgb_u8.image_type(), (PixelType::Rgb, BitDepth::_8));
         assert!(img_rgb_u8.is_rgb());
-        assert!(img_rgb_u8.as_rgb_u8().is_ok());
+        assert!(img_rgb_u8.into_rgb_u8().is_ok());
         let img_rgb_u16 = open("./test_data/io/tiff/rgb_16bit.tiff").unwrap();
         assert_eq!(img_rgb_u16.image_type(), (PixelType::Rgb, BitDepth::_16));
         assert!(img_rgb_u16.is_rgb());
-        assert!(img_rgb_u16.as_rgb_u16().is_ok());
+        assert!(img_rgb_u16.into_rgb_u16().is_ok());
         let img_rgb_alpha_u8 = open("./test_data/io/tiff/rgba_8bit.tiff").unwrap();
         assert_eq!(
             img_rgb_alpha_u8.image_type(),
             (PixelType::RgbA, BitDepth::_8)
         );
         assert!(img_rgb_alpha_u8.is_rgb_alpha());
-        assert!(img_rgb_alpha_u8.as_rgb_alpha_u8().is_ok());
+        assert!(img_rgb_alpha_u8.into_rgb_alpha_u8().is_ok());
         let img_rgb_alpha_u16 = open("./test_data/io/tiff/rgba_16bit.tiff").unwrap();
         assert_eq!(
             img_rgb_alpha_u16.image_type(),
             (PixelType::RgbA, BitDepth::_16)
         );
         assert!(img_rgb_alpha_u16.is_rgb_alpha());
-        assert!(img_rgb_alpha_u16.as_rgb_alpha_u16().is_ok());
+        assert!(img_rgb_alpha_u16.into_rgb_alpha_u16().is_ok());
     }
 
     fn mk_test_img<P, S>() -> ImageBuffer2D<P>
@@ -241,42 +241,42 @@ mod tests {
         helper_test_write_roundtrip_u8(
             dir.path().join("test_save_png_luma_u8.png"),
             img_luma_u8,
-            |p| open(p)?.as_luma_u8(),
+            |p| open(p)?.into_luma_u8(),
         );
         helper_test_write_roundtrip_u16(
             dir.path().join("test_save_png_luma_u16.png"),
             img_luma_u16,
-            |p| open(p)?.as_luma_u16(),
+            |p| open(p)?.into_luma_u16(),
         );
         helper_test_write_roundtrip_u8(
             dir.path().join("test_save_png_luma_alpha_u8.png"),
             img_luma_alpha_u8,
-            |p| open(p)?.as_luma_u8(),
+            |p| open(p)?.into_luma_u8(),
         );
         helper_test_write_roundtrip_u16(
             dir.path().join("test_save_png_luma_alpha_u16.png"),
             img_luma_alpha_u16,
-            |p| open(p)?.as_luma_u16(),
+            |p| open(p)?.into_luma_u16(),
         );
         helper_test_write_roundtrip_u8(
             dir.path().join("test_save_png_rgb_u8.png"),
             img_rgb_u8,
-            |p| open(p)?.as_rgb_u8(),
+            |p| open(p)?.into_rgb_u8(),
         );
         helper_test_write_roundtrip_u16(
             dir.path().join("test_save_png_rgb_u16.png"),
             img_rgb_u16,
-            |p| open(p)?.as_rgb_u16(),
+            |p| open(p)?.into_rgb_u16(),
         );
         helper_test_write_roundtrip_u8(
             dir.path().join("test_save_png_rgb_alpha_u8.png"),
             img_rgb_alpha_u8,
-            |p| open(p)?.as_rgb_u8(),
+            |p| open(p)?.into_rgb_u8(),
         );
         helper_test_write_roundtrip_u16(
             dir.path().join("test_save_png_rgb_alpha_u16.png"),
             img_rgb_alpha_u16,
-            |p| open(p)?.as_rgb_u16(),
+            |p| open(p)?.into_rgb_u16(),
         );
     }
 }

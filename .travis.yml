@@ -2,9 +2,36 @@ language: rust
 
 sudo: required
 
+rust:
+  - stable
+  - beta
+  - nightly
+
+stage: test
+
+cache:
+  cargo: true
+  directories:
+    - $HOME/.ccache
+
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - cmake
+      - gcc
+      - binutils-dev
+      - libiberty-dev
+
 env:
   global:
     - RUSTFLAGS="-C link-dead-code"
+
+script: ./ci/travis_test.sh
+
+after_success: ./ci/mk_coverage.sh
 
 jobs:
   allow_failures:
@@ -12,67 +39,14 @@ jobs:
   fast_finish: true
   include:
     - stage: pre-build checks
-      name: "Rustfmt coding style conformance"
       rust: stable
+      name: "Rustfmt coding style conformance"
+      addons: { }
       cache: false
       before_script: rustup component add rustfmt-preview
       script:
         - cargo fmt -- --write-mode=check
-    - stage: test phase
-      name: "Test suite (stable)"
-      rust: stable
-      cache:
-        cargo: true
-        directories:
-          - $HOME/.ccache
-      addons:
-        apt:
-          packages:
-            - libcurl4-openssl-dev
-            - libelf-dev
-            - libdw-dev
-            - cmake
-            - gcc
-            - binutils-dev
-            - libiberty-dev
-      script: ./ci/travis_test.sh
-      after_success: ./ci/mk_coverage.sh
-    - name: "Test suite (beta)"
-      rust: beta
-      cache:
-        cargo: true
-        directories:
-          - $HOME/.ccache
-      addons:
-        apt:
-          packages:
-            - libcurl4-openssl-dev
-            - libelf-dev
-            - libdw-dev
-            - cmake
-            - gcc
-            - binutils-dev
-            - libiberty-dev
-      script: ./ci/travis_test.sh
-      after_success: ./ci/mk_coverage.sh
-    - name: "Test suite (nightly)"
-      rust: nightly
-      cache:
-        cargo: true
-        directories:
-          - $HOME/.ccache
-      addons:
-        apt:
-          packages:
-            - libcurl4-openssl-dev
-            - libelf-dev
-            - libdw-dev
-            - cmake
-            - gcc
-            - binutils-dev
-            - libiberty-dev
-      script: ./ci/travis_test.sh
-      after_success: ./ci/mk_coverage.sh
+      after_success:
     - stage: static analysis
       name: "Clippy"
       rust: nightly
@@ -80,6 +54,7 @@ jobs:
         cargo: true
       before_script: rustup component add clippy-preview
       script: cargo clippy -- -D clippy
+      after_success:
 
 stages:
     - pre-build checks

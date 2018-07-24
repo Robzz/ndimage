@@ -3,21 +3,42 @@
 use num_traits::{Bounded, NumAssign, NumCast, NumRef, Zero};
 #[cfg(feature = "rand_integration")]
 use rand::{
-    distributions::{Distribution, Standard},
-    Rng,
+    distributions::{Distribution, Standard}, Rng,
 };
 
 use std::fmt::{Debug, Display};
 
 /// Implemented for primitive pixel types.
 pub trait Primitive:
-    Copy + Clone + Debug + Display + Bounded + NumAssign + NumRef + NumCast + PartialOrd + Sync + Send
+    Copy
+    + Clone
+    + Debug
+    + Display
+    + Bounded
+    + NumAssign
+    + NumRef
+    + NumCast
+    + PartialOrd
+    + Sync
+    + Send
 {
 }
 
-impl<T> Primitive for T where
-    T: Copy + Clone + Debug + Display + Bounded + NumAssign + NumRef + NumCast + PartialOrd + Sync + Send
-{}
+impl<T> Primitive for T
+where
+    T: Copy
+        + Clone
+        + Debug
+        + Display
+        + Bounded
+        + NumAssign
+        + NumRef
+        + NumCast
+        + PartialOrd
+        + Sync
+        + Send,
+{
+}
 
 /// This trait must be implemented for the types you want to store in an image.
 pub trait Pixel: Clone + PartialEq + Sync + Send + Zero {

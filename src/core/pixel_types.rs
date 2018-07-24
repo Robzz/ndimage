@@ -4,14 +4,15 @@ use num_traits::cast::cast;
 use num_traits::{Bounded, One, Zero};
 #[cfg(feature = "rand_integration")]
 use rand::{
-    distributions::{Distribution, Standard},
-    Rng,
+    distributions::{Distribution, Standard}, Rng,
 };
 
 use core::{Pixel, PixelCast, Primitive};
 
 use std::convert::From;
-use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign};
+use std::ops::{
+    Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Enumerate the supported subpixel types.
@@ -37,7 +38,7 @@ pub enum SubpixelType {
     /// u64
     F64,
     /// Intended for custom subpixel types.
-    Other
+    Other,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,7 +59,8 @@ pub enum PixelType {
 macro_rules! impl_pixel_op {
     ($pix_t:ident : $n_channels:expr, $op:ident, $op_fn:ident) => {
         impl<P> $op for $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             type Output = $pix_t<P>;
 
@@ -72,7 +74,8 @@ macro_rules! impl_pixel_op {
         }
 
         impl<'a, P> $op<$pix_t<P>> for &'a $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             type Output = $pix_t<P>;
 
@@ -86,7 +89,8 @@ macro_rules! impl_pixel_op {
         }
 
         impl<'a, P> $op<&'a $pix_t<P>> for $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             type Output = $pix_t<P>;
 
@@ -100,7 +104,8 @@ macro_rules! impl_pixel_op {
         }
 
         impl<'a, 'b, P> $op<&'a $pix_t<P>> for &'b $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             type Output = $pix_t<P>;
 
@@ -114,7 +119,8 @@ macro_rules! impl_pixel_op {
         }
 
         impl<P> $op<P> for $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             type Output = $pix_t<P>;
 
@@ -128,7 +134,8 @@ macro_rules! impl_pixel_op {
         }
 
         impl<'a, P> $op<P> for &'a $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             type Output = $pix_t<P>;
 
@@ -142,7 +149,8 @@ macro_rules! impl_pixel_op {
         }
 
         impl<'a, P> $op<&'a P> for $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             type Output = $pix_t<P>;
 
@@ -156,7 +164,8 @@ macro_rules! impl_pixel_op {
         }
 
         impl<'a, 'b, P> $op<&'a P> for &'b $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             type Output = $pix_t<P>;
 
@@ -168,13 +177,14 @@ macro_rules! impl_pixel_op {
                 $pix_t { data }
             }
         }
-    }
+    };
 }
 
 macro_rules! impl_pixel_op_assign {
     ($pix_t:ident : $n_channels:expr, $op:ident, $op_fn:ident) => {
         impl<P> $op for $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             fn $op_fn(&mut self, rhs: $pix_t<P>) {
                 for (s, r) in self.data.iter_mut().zip(rhs.data.iter()) {
@@ -184,7 +194,8 @@ macro_rules! impl_pixel_op_assign {
         }
 
         impl<'a, P> $op<&'a $pix_t<P>> for $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             fn $op_fn(&mut self, rhs: &'a $pix_t<P>) {
                 for (s, r) in self.data.iter_mut().zip(rhs.data.iter()) {
@@ -194,7 +205,8 @@ macro_rules! impl_pixel_op_assign {
         }
 
         impl<P> $op<P> for $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             fn $op_fn(&mut self, rhs: P) {
                 for s in self.data.iter_mut() {
@@ -204,7 +216,8 @@ macro_rules! impl_pixel_op_assign {
         }
 
         impl<'a, P> $op<&'a P> for $pix_t<P>
-            where P: Primitive
+        where
+            P: Primitive,
         {
             fn $op_fn(&mut self, rhs: &'a P) {
                 for s in self.data.iter_mut() {
@@ -212,7 +225,7 @@ macro_rules! impl_pixel_op_assign {
                 }
             }
         }
-    }
+    };
 }
 
 macro_rules! impl_pixels {

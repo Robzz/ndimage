@@ -1,15 +1,13 @@
 //! Contains modules related to image I/O.
 
-#[macro_use] mod macros;
+#[macro_use]
+mod macros;
 pub mod png;
 pub mod tiff;
 pub mod traits;
 
-use self::{
-    png::PngEncodable,
-    traits::ImageDecoder
-};
-use core::{DynamicImage, Pixel, Image2D};
+use self::{png::PngEncodable, traits::ImageDecoder};
+use core::{DynamicImage, Image2D, Pixel};
 
 use failure::Error;
 
@@ -62,20 +60,19 @@ pub fn save<I, P, P2>(filepath: P2, img: &I) -> Result<(), Error>
 where
     I: Image2D<P>,
     P: Pixel + PngEncodable<P>,
-    P2: AsRef<Path>
+    P2: AsRef<Path>,
 {
     if let Some(format) = parse_extension(&filepath) {
         match format {
             Format::Tiff => {
                 bail!("TIFF encoding is not supported yet.");
-            },
+            }
             Format::Png => {
                 let out = File::create(filepath)?;
                 <P as PngEncodable<P>>::write_image(out, img)
             }
         }
-    }
-    else {
+    } else {
         bail!("Could not infer image format from file extension!")
     }
 }
@@ -84,9 +81,9 @@ where
 mod tests {
     use super::*;
 
-    use core::{BitDepth, PixelType, ImageBuffer2D, Primitive, Luma, Rgb, Image2DMut};
+    use core::{BitDepth, Image2DMut, ImageBuffer2D, Luma, PixelType, Primitive, Rgb};
 
-    use num_traits::{Zero, NumCast};
+    use num_traits::{NumCast, Zero};
     use tempfile::tempdir;
 
     use std::fmt::Debug;
@@ -208,7 +205,7 @@ mod tests {
     where
         F: FnOnce(P2) -> Result<Box<ImageBuffer2D<P>>, Error>,
         P: Pixel<Subpixel = u8> + Debug + PngEncodable<P>,
-        P2: AsRef<Path>
+        P2: AsRef<Path>,
     {
         {
             save(&path, &img).unwrap();
@@ -221,7 +218,7 @@ mod tests {
     where
         F: FnOnce(P2) -> Result<Box<ImageBuffer2D<P>>, Error>,
         P: Pixel<Subpixel = u16> + Debug + PngEncodable<P>,
-        P2: AsRef<Path>
+        P2: AsRef<Path>,
     {
         {
             save(&path, &img).unwrap();
@@ -241,13 +238,45 @@ mod tests {
         let img_rgb_u16 = mk_test_img::<Rgb<u16>, u16>();
         let img_rgb_alpha_u8 = mk_test_img::<Rgb<u8>, u8>();
         let img_rgb_alpha_u16 = mk_test_img::<Rgb<u16>, u16>();
-        helper_test_write_roundtrip_u8(dir.path().join("test_save_png_luma_u8.png"), img_luma_u8, |p| open(p)?.as_luma_u8());
-        helper_test_write_roundtrip_u16(dir.path().join("test_save_png_luma_u16.png"), img_luma_u16, |p| open(p)?.as_luma_u16());
-        helper_test_write_roundtrip_u8(dir.path().join("test_save_png_luma_alpha_u8.png"), img_luma_alpha_u8, |p| open(p)?.as_luma_u8());
-        helper_test_write_roundtrip_u16(dir.path().join("test_save_png_luma_alpha_u16.png"), img_luma_alpha_u16, |p| open(p)?.as_luma_u16());
-        helper_test_write_roundtrip_u8(dir.path().join("test_save_png_rgb_u8.png"), img_rgb_u8, |p| open(p)?.as_rgb_u8());
-        helper_test_write_roundtrip_u16(dir.path().join("test_save_png_rgb_u16.png"), img_rgb_u16, |p| open(p)?.as_rgb_u16());
-        helper_test_write_roundtrip_u8(dir.path().join("test_save_png_rgb_alpha_u8.png"), img_rgb_alpha_u8, |p| open(p)?.as_rgb_u8());
-        helper_test_write_roundtrip_u16(dir.path().join("test_save_png_rgb_alpha_u16.png"), img_rgb_alpha_u16, |p| open(p)?.as_rgb_u16());
+        helper_test_write_roundtrip_u8(
+            dir.path().join("test_save_png_luma_u8.png"),
+            img_luma_u8,
+            |p| open(p)?.as_luma_u8(),
+        );
+        helper_test_write_roundtrip_u16(
+            dir.path().join("test_save_png_luma_u16.png"),
+            img_luma_u16,
+            |p| open(p)?.as_luma_u16(),
+        );
+        helper_test_write_roundtrip_u8(
+            dir.path().join("test_save_png_luma_alpha_u8.png"),
+            img_luma_alpha_u8,
+            |p| open(p)?.as_luma_u8(),
+        );
+        helper_test_write_roundtrip_u16(
+            dir.path().join("test_save_png_luma_alpha_u16.png"),
+            img_luma_alpha_u16,
+            |p| open(p)?.as_luma_u16(),
+        );
+        helper_test_write_roundtrip_u8(
+            dir.path().join("test_save_png_rgb_u8.png"),
+            img_rgb_u8,
+            |p| open(p)?.as_rgb_u8(),
+        );
+        helper_test_write_roundtrip_u16(
+            dir.path().join("test_save_png_rgb_u16.png"),
+            img_rgb_u16,
+            |p| open(p)?.as_rgb_u16(),
+        );
+        helper_test_write_roundtrip_u8(
+            dir.path().join("test_save_png_rgb_alpha_u8.png"),
+            img_rgb_alpha_u8,
+            |p| open(p)?.as_rgb_u8(),
+        );
+        helper_test_write_roundtrip_u16(
+            dir.path().join("test_save_png_rgb_alpha_u16.png"),
+            img_rgb_alpha_u16,
+            |p| open(p)?.as_rgb_u16(),
+        );
     }
 }

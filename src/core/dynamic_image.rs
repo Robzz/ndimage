@@ -1,6 +1,6 @@
 //! Definition of the dynamic image type.
 
-use core::{BitDepth, PixelType, ImageBuffer2D, ImageType, Luma, LumaA, Rgb, RgbA};
+use core::{BitDepth, ImageBuffer2D, ImageType, Luma, LumaA, PixelType, Rgb, RgbA};
 
 use failure::Error;
 

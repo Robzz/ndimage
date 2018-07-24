@@ -1,6 +1,6 @@
 //! Traits related to image I/O.
 
-use core::{DynamicImage, Image2D, ImageBuffer2D, ImageType, Pixel, Luma, LumaA, Rgb, RgbA};
+use core::{DynamicImage, Image2D, ImageBuffer2D, ImageType, Luma, LumaA, Pixel, Rgb, RgbA};
 
 use failure::Error;
 
@@ -59,7 +59,7 @@ pub trait ImageDecoder: Sized {
 pub trait ImageEncoder<W, P>: Sized
 where
     W: Write,
-    P: Pixel
+    P: Pixel,
 {
     /// Write the image to the output buffer.
     fn write_image(self, out: W, img: &Image2D<P>) -> Result<(), Error>;

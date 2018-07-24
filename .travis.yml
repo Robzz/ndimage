@@ -2,53 +2,79 @@ language: rust
 
 sudo: required
 
-rust:
-  - stable
-  - beta
-  - nightly
-
-matrix:
-  allow_failures:
-    - rust: nightly
-
-cache:
-  cargo: true
-  apt: true
-  directories:
-    - $HOME/.ccache
-
 env:
   global:
-  - RUSTFLAGS="-C link-dead-code"
+    - RUSTFLAGS="-C link-dead-code"
 
-addons:
-  apt:
-    packages:
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-      - cmake
-      - gcc
-      - binutils-dev
-      - libiberty-dev
+jobs:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+  include:
+    - stage: rustfmt
+      name: "Style check"
+      rust: stable
+      cache: false
+      before_script: rustup component add rustfmt-preview
+      script:
+        - cargo fmt -- --write-mode=check
+    - stage: test
+      name: "Test suite (stable)"
+      rust: stable
+      cache:
+        cargo: true
+        apt: true
+        ccache: true
+      addons:
+        apt:
+          packages:
+            - libcurl4-openssl-dev
+            - libelf-dev
+            - libdw-dev
+            - cmake
+            - gcc
+            - binutils-dev
+            - libiberty-dev
+      script: ./ci/travis_test.sh
+      after_success: ./ci/mk_coverage.sh
+    - name: "Test suite (beta)"
+      rust: beta
+      cache:
+        cargo: true
+        apt: true
+        ccache: true
+      addons:
+        apt:
+          packages:
+            - libcurl4-openssl-dev
+            - libelf-dev
+            - libdw-dev
+            - cmake
+            - gcc
+            - binutils-dev
+            - libiberty-dev
+      script: ./ci/travis_test.sh
+      after_success: ./ci/mk_coverage.sh
+    - name: "Test suite (nightly)"
+      rust: nightly
+      cache:
+        cargo: true
+        apt: true
+        ccache: true
+      addons:
+        apt:
+          packages:
+            - libcurl4-openssl-dev
+            - libelf-dev
+            - libdw-dev
+            - cmake
+            - gcc
+            - binutils-dev
+            - libiberty-dev
+      script: ./ci/travis_test.sh
+      after_success: ./ci/mk_coverage.sh
 
-script:
-    - cargo build --verbose
-    - cargo test --verbose
-    - cd .. &&
-      wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
-      tar xzf master.tar.gz &&
-      cd kcov-master &&
-      mkdir build &&
-      cd build &&
-      cmake .. -DCMAKE_C_COMPILER_LAUNCHER="ccache" -DCMAKE_CXX_COMPILER_LAUNCHER="ccache" &&
-      make &&
-      make install DESTDIR=../../kcov-build &&
-      cd ../.. &&
-      rm -rf kcov-master &&
-      cd ndimage
-
-after_success: |
-  for file in target/debug/ndimage-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; ../kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
-  bash <(curl -s https://codecov.io/bash) &&
-  echo "Uploaded code coverage"
+stages:
+    - rustfmt
+    - test
+    #- clippy

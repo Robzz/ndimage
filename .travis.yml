@@ -2,12 +2,16 @@ language: rust
 
 sudo: required
 
+os:
+  - linux
+  - osx
+
 rust:
   - stable
   - beta
   - nightly
 
-stage: test
+stage: build and test
 
 cache:
   cargo: true
@@ -49,6 +53,7 @@ jobs:
       after_success:
     - stage: static analysis
       name: "Clippy"
+      addons: { }
       rust: nightly
       cache:
         cargo: true
@@ -58,5 +63,5 @@ jobs:
 
 stages:
     - pre-build checks
-    - test
+    - build and test
     - lints

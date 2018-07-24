@@ -1,7 +1,10 @@
 //! Defines a generic 2D image type.
 
+use core::{PixelType, Luma, LumaA, Pixel, Primitive, Rect, Rgb, RgbA};
+
 use failure::Error;
 use ndarray;
+use ndarray::{OwnedRepr, ViewRepr};
 use ndarray::prelude::*;
 use num_traits::Zero;
 #[cfg(feature = "rand_integration")]
@@ -12,9 +15,7 @@ use rand::{
 
 use std::cmp::min;
 use std::iter::{DoubleEndedIterator, ExactSizeIterator, IntoIterator};
-use std::ops::{Index, IndexMut};
-
-use core::{PixelType, Luma, LumaA, Pixel, Primitive, Rect, Rgb, RgbA};
+use std::ops::{Add, Sub, Mul, Div, Rem, Index, IndexMut};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Bit depth of an image.
@@ -41,6 +42,9 @@ where
     /// **Panics** if the index is out of bounds.
     fn get_pixel(&self, x: u32, y: u32) -> &P;
 
+    /// Return a view on the image.
+    fn get_view(&self) -> Image2DView<P>;
+
     /// Return the width of the image.
     fn width(&self) -> u32;
     /// Return the height of the image.
@@ -51,7 +55,6 @@ where
     }
 
     // TODO: map to u32's for coherence
-    // TODO: no more ndarray types in interface
     /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &P)
     fn enumerate_pixels(&self) -> ndarray::iter::IndexedIter<P, Ix2>;
 
@@ -135,6 +138,94 @@ where
     }
 }
 
+
+macro_rules! impl_image_op {
+    ($op_name:ident, $op_fn:ident) => {
+        // &T op &T impls
+        impl<'a, 'b, P> $op_name<&'a Image2DRepr<OwnedRepr<P>, P>> for &'b Image2DRepr<OwnedRepr<P>, P>
+        where
+            P: Pixel + $op_name<P, Output=P>,
+        {
+            type Output = Result<ImageBuffer2D<P>, Error>;
+
+            fn $op_fn(self, rhs: &'a Image2DRepr<OwnedRepr<P>, P>) -> Self::Output {
+                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
+                if dim_lhs != dim_rhs {
+                    bail!("Image dimensions do not match");
+                }
+                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(&rhs.buffer) })
+            }
+        }
+
+        impl<'a, 'b, 'c, P> $op_name<&'a Image2DRepr<ViewRepr<&'b P>, P>> for &'c Image2DRepr<OwnedRepr<P>, P>
+        where
+            P: Pixel + $op_name<P, Output=P>,
+        {
+            type Output = Result<ImageBuffer2D<P>, Error>;
+
+            fn $op_fn(self, rhs: &'a Image2DRepr<ViewRepr<&'b P>, P>) -> Self::Output {
+                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
+                if dim_lhs != dim_rhs {
+                    bail!("Image dimensions do not match");
+                }
+                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(&rhs.buffer) })
+            }
+        }
+
+        impl<'a, 'b, 'c, P> $op_name<&'a Image2DRepr<OwnedRepr<P>, P>> for &'b Image2DRepr<ViewRepr<&'c P>, P>
+        where
+            P: Pixel + $op_name<P, Output=P>,
+        {
+            type Output = Result<ImageBuffer2D<P>, Error>;
+
+            fn $op_fn(self, rhs: &'a Image2DRepr<OwnedRepr<P>, P>) -> Self::Output {
+                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
+                if dim_lhs != dim_rhs {
+                    bail!("Image dimensions do not match");
+                }
+                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(&rhs.buffer) })
+            }
+        }
+
+        impl<'a, 'b, 'c, 'd, P> $op_name<&'a Image2DRepr<ViewRepr<&'b P>, P>> for &'c Image2DRepr<ViewRepr<&'d P>, P>
+        where
+            P: Pixel + $op_name<P, Output=P>,
+        {
+            type Output = Result<ImageBuffer2D<P>, Error>;
+
+            fn $op_fn(self, rhs: &'a Image2DRepr<ViewRepr<&'b P>, P>) -> Self::Output {
+                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
+                if dim_lhs != dim_rhs {
+                    bail!("Image dimensions do not match");
+                }
+                Ok(ImageBuffer2D { buffer: (&self.buffer).$op_fn(&rhs.buffer) })
+            }
+        }
+
+        // Image2D impls
+        impl<'a, 'b, P> $op_name<&'a dyn Image2D<P>> for &'b dyn Image2D<P>
+        where
+            P: Pixel + $op_name<P, Output=P>,
+        {
+            type Output = Result<ImageBuffer2D<P>, Error>;
+
+            fn $op_fn(self, rhs: &'a Image2D<P>) -> Self::Output {
+                let (dim_lhs, dim_rhs) = (self.dimensions(), rhs.dimensions());
+                if dim_lhs != dim_rhs {
+                    bail!("Image dimensions do not match");
+                }
+                self.get_view().$op_fn(&rhs.get_view())
+            }
+        }
+    }
+}
+
+impl_image_op!(Add, add);
+impl_image_op!(Mul, mul);
+impl_image_op!(Sub, sub);
+impl_image_op!(Div, div);
+impl_image_op!(Rem, rem);
+
 /// Contains operations on mutable images.
 pub trait Image2DMut<P>: Image2D<P>
 where
@@ -151,7 +242,6 @@ where
     fn put_pixel(&mut self, x: u32, y: u32, pixel: P);
 
     // TODO: map to u32's for coherence
-    // TODO: no more ndarray types in interface
     /// Return an iterator to the pixels and their indices. The type of the iterator is ((usize, usize), &mut P)
     fn enumerate_pixels_mut(&mut self) -> ndarray::iter::IndexedIterMut<P, Ix2>;
 
@@ -291,6 +381,11 @@ where
 
     fn get_pixel(&self, x: u32, y: u32) -> &P {
         &self.buffer[[y as usize, x as usize]]
+    }
+
+    fn get_view(&self) -> Image2DView<P>
+    {
+        Image2DView { buffer: self.buffer.view() }
     }
 
     // TODO: map to u32's for coherence
@@ -760,6 +855,15 @@ mod tests {
         {
             assert_eq!((2 * x + 3 * y) as u8, p);
         }
+    }
+
+    #[test]
+    fn test_add() {
+        let v1 = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        let v2 = [8, 7, 6, 5, 4, 3, 2, 1, 0];
+        let img1 = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v1).unwrap();
+        let img2 = ImageBuffer2D::<Luma<u8>>::from_raw_vec(3, 3, &v2).unwrap();
+        let _ = &img1 + &img2;
     }
 
     #[test]

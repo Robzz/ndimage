@@ -5,12 +5,13 @@ extern crate byteorder;
 #[macro_use]
 extern crate failure;
 #[macro_use]
-extern crate ndarray;
+pub extern crate ndarray;
 extern crate num_traits;
 extern crate png;
 #[cfg(feature = "rand_integration")]
 extern crate rand;
-#[cfg(test)] extern crate tempfile;
+#[cfg(test)]
+extern crate tempfile;
 extern crate tiff;
 
 pub mod core;

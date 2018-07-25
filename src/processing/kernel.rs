@@ -1,14 +1,11 @@
 //! Kernels and image convolution.
 
-use core::{
-    Image2D, Image2DMut, ImageBuffer2D, Pixel, Primitive, Rect,
-    padding::*
-};
+use core::{padding::*, Image2D, Image2DMut, ImageBuffer2D, Pixel, Primitive, Rect};
 use helper::generic::f64_to_float;
 use math;
 
 use failure::Error;
-use num_traits::{Float, NumCast, Zero, clamp};
+use num_traits::{clamp, Float, NumCast, Zero};
 
 use std::ops::Add;
 
@@ -83,8 +80,7 @@ where
                 let max = <T as NumCast>::from::<S>(S::max_value()).unwrap();
                 let min = <T as NumCast>::from::<S>(S::min_value()).unwrap();
                 let p_t = clamp(pix_accu_t[i], min, max);
-                pix_accu_o[i] =
-                    <O as NumCast>::from::<T>(p_t).unwrap_or_else(<O as Zero>::zero);
+                pix_accu_o[i] = <O as NumCast>::from::<T>(p_t).unwrap_or_else(<O as Zero>::zero);
             }
             *dst_pix = Po::from_slice(&pix_accu_o);
         }
@@ -127,10 +123,7 @@ where
         let zero = T::zero();
         let one = <T as NumCast>::from(1).unwrap();
         let two = <T as NumCast>::from(2).unwrap();
-        Kernel::new(vec![-one, zero, one,
-                         -two, zero, two,
-                         -one, zero, one],
-                    1).unwrap()
+        Kernel::new(vec![-one, zero, one, -two, zero, two, -one, zero, one], 1).unwrap()
     }
 
     /// Return a 3x3 Sobel kernel to compute the y derivative in the positive direction.
@@ -138,10 +131,7 @@ where
         let zero = T::zero();
         let one = <T as NumCast>::from(1).unwrap();
         let two = <T as NumCast>::from(2).unwrap();
-        Kernel::new(vec![-one , -two , -one,
-                          zero,  zero,  zero,
-                          one ,  two ,  one],
-                    1).unwrap()
+        Kernel::new(vec![-one, -two, -one, zero, zero, zero, one, two, one], 1).unwrap()
     }
 }
 

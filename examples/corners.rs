@@ -6,14 +6,11 @@ extern crate ndimage;
 
 use ndimage::{
     core::{
-        DynamicImage, Image2D, Rgb, Luma,
-        color_convert::{Linear, Luma as PLuma, FromColor},
-        padding::{Padding, pad_mirror}
+        color_convert::{FromColor, Linear, Luma as PLuma}, padding::{pad_mirror, Padding},
+        DynamicImage, Image2D, Luma, Rgb,
     },
-    draw::draw_cross,
-    features::harris::harris_corners,
-    io::{open, save},
-    processing::kernel::Kernel
+    draw::draw_cross, features::harris::harris_corners, io::{open, save},
+    processing::kernel::Kernel,
 };
 
 use failure::Error;
@@ -47,7 +44,7 @@ fn main() -> Result<(), Error> {
                 draw_cross(&mut *img, corner, 2, Rgb::new([255u8, 0u8, 0u8]));
             }
             save(out_img_path, img.as_ref()).unwrap();
-        },
+        }
         DynamicImage::LumaU8(mut img) => {
             let corners = harris_corners(img.as_ref(), 1, 0.01);
             println!("Found {} corners", corners.len());
@@ -55,7 +52,7 @@ fn main() -> Result<(), Error> {
                 draw_cross(img.as_mut(), corner, 2, Luma::new([255u8]));
             }
             save(out_img_path, img.as_ref()).unwrap();
-        },
+        }
         _ => {
             bail!("Unsupported image type!");
         }

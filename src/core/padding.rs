@@ -14,20 +14,20 @@ pub enum Padding {
     /// Wrap around.
     Wrap,
     /// Mirror borders.
-    Mirror
+    Mirror,
 }
 
 impl Padding {
     /// Apply the padding to an image.
     pub fn apply<P>(&self, img: &Image2D<P>, radius: u32) -> ImageBuffer2D<P>
     where
-        P: Pixel + Zero
+        P: Pixel + Zero,
     {
         match self {
             Padding::Zero => pad_zeros(img, radius),
             Padding::Replicate => pad_replicate(img, radius),
             Padding::Wrap => pad_wrap(img, radius),
-            Padding::Mirror => pad_mirror(img, radius)
+            Padding::Mirror => pad_mirror(img, radius),
         }
     }
 }

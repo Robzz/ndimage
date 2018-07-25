@@ -1,14 +1,14 @@
 //! PNG codec.
 
 use core::{
-    BitDepth, PixelType, DynamicImage, Image2D, ImageBuffer2D, ImageType, Luma, LumaA, Pixel, Rgb,
+    BitDepth, DynamicImage, Image2D, ImageBuffer2D, ImageType, Luma, LumaA, Pixel, PixelType, Rgb,
     RgbA,
 };
 
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt};
 use failure::Error;
 
-use io:: traits::{ImageDecoder, ImageEncoder};
+use io::traits::{ImageDecoder, ImageEncoder};
 use png;
 use png::HasParameters;
 
@@ -48,11 +48,7 @@ pub enum DecodingError {
     #[fail(display = "Internal decoder error")]
     /// Internal decoder error. These should not actually occur, please report them if you encounter any.
     Internal,
-    #[fail(
-        display = "Incorrect pixel type, image type is {:?}({:?})",
-        _0,
-        _1
-    )]
+    #[fail(display = "Incorrect pixel type, image type is {:?}({:?})", _0, _1)]
     /// The requested type is not the actual type of the image
     IncorrectPixelType(PixelType, BitDepth),
     #[fail(display = "Unsupported pixel type: {:?}", _0)]
@@ -319,7 +315,9 @@ where
             (PixelType::LumaA, BitDepth::_16) => Ok(DynamicImage::LumaAU16(Box::new(
                 self.read_luma_alpha_u16()?,
             ))),
-            (PixelType::Rgb, BitDepth::_8) => Ok(DynamicImage::RgbU8(Box::new(self.read_rgb_u8()?))),
+            (PixelType::Rgb, BitDepth::_8) => {
+                Ok(DynamicImage::RgbU8(Box::new(self.read_rgb_u8()?)))
+            }
             (PixelType::Rgb, BitDepth::_16) => {
                 Ok(DynamicImage::RgbU16(Box::new(self.read_rgb_u16()?)))
             }
@@ -355,8 +353,7 @@ pub struct Encoder8;
 /// 16bit PNG encoder type
 pub struct Encoder16;
 
-impl Encoder8
-{
+impl Encoder8 {
     /// Create a new PNG encoder object.
     pub fn new() -> Encoder8 {
         Encoder8::default()
@@ -366,7 +363,7 @@ impl Encoder8
     pub fn write<W, P>(&self, out: W, img: &Image2D<P>) -> Result<(), Error>
     where
         W: Write,
-        P: Pixel<Subpixel=u8>
+        P: Pixel<Subpixel = u8>,
     {
         let (w, h) = img.dimensions();
         let mut enc = png::Encoder::new(out, w, h);
@@ -377,8 +374,7 @@ impl Encoder8
         });
         // TODO: be more gracious
         let buffer = try!(img.as_slice().ok_or(EncodingError::Internal));
-        let mut u8_buffer =
-            Vec::with_capacity((w * h * P::N_CHANNELS) as usize);
+        let mut u8_buffer = Vec::with_capacity((w * h * P::N_CHANNELS) as usize);
         for pix in buffer {
             u8_buffer.extend_from_slice(pix.channels());
         }
@@ -388,8 +384,7 @@ impl Encoder8
     }
 }
 
-impl Encoder16
-{
+impl Encoder16 {
     /// Create a new PNG encoder object.
     pub fn new() -> Encoder16 {
         Encoder16::default()
@@ -410,8 +405,7 @@ impl Encoder16
         });
         // TODO: be more gracious
         let buffer = try!(img.as_slice().ok_or(EncodingError::Internal));
-        let mut u16_buffer =
-            Vec::with_capacity((w * h * P::N_CHANNELS) as usize);
+        let mut u16_buffer = Vec::with_capacity((w * h * P::N_CHANNELS) as usize);
         for pix in buffer {
             u16_buffer.extend_from_slice(pix.channels());
         }
@@ -425,7 +419,7 @@ impl Encoder16
 impl<W, P> ImageEncoder<W, P> for Encoder8
 where
     W: Write,
-    P: Pixel<Subpixel = u8>
+    P: Pixel<Subpixel = u8>,
 {
     fn write_image(self, out: W, img: &Image2D<P>) -> Result<(), Error> {
         self.write(out, img)
@@ -435,7 +429,7 @@ where
 impl<W, P> ImageEncoder<W, P> for Encoder16
 where
     W: Write,
-    P: Pixel<Subpixel = u16>
+    P: Pixel<Subpixel = u16>,
 {
     fn write_image(self, out: W, img: &Image2D<P>) -> Result<(), Error> {
         self.write(out, img)

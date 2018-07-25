@@ -1,13 +1,12 @@
 //! TIFF codec.
 
-use core::{BitDepth, PixelType, DynamicImage, ImageBuffer2D, ImageType, Luma, LumaA, Rgb, RgbA};
+use core::{BitDepth, DynamicImage, ImageBuffer2D, ImageType, Luma, LumaA, PixelType, Rgb, RgbA};
 use io::traits::ImageDecoder;
 
 use failure::Error;
 
 use tiff::{
-    decoder::{Decoder as TiffDecoder, DecodingResult},
-    ColorType, TiffError,
+    decoder::{Decoder as TiffDecoder, DecodingResult}, ColorType, TiffError,
 };
 
 use std::io::{Read, Seek};
@@ -29,11 +28,7 @@ pub enum DecodingError {
     #[fail(display = "Internal decoder error")]
     /// Internal decoder error. These should not actually occur, please report them if you encounter any.
     Internal,
-    #[fail(
-        display = "Incorrect pixel type, image type is {:?}({:?})",
-        _0,
-        _1
-    )]
+    #[fail(display = "Incorrect pixel type, image type is {:?}({:?})", _0, _1)]
     /// The requested type is not the actual type of the image
     IncorrectPixelType(PixelType, BitDepth),
     #[fail(display = "Unsupported pixel type: {:?}", _0)]
@@ -330,7 +325,9 @@ where
             (PixelType::LumaA, BitDepth::_16) => Ok(DynamicImage::LumaAU16(Box::new(
                 self.read_luma_alpha_u16()?,
             ))),
-            (PixelType::Rgb, BitDepth::_8) => Ok(DynamicImage::RgbU8(Box::new(self.read_rgb_u8()?))),
+            (PixelType::Rgb, BitDepth::_8) => {
+                Ok(DynamicImage::RgbU8(Box::new(self.read_rgb_u8()?)))
+            }
             (PixelType::Rgb, BitDepth::_16) => {
                 Ok(DynamicImage::RgbU16(Box::new(self.read_rgb_u16()?)))
             }

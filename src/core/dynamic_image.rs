@@ -1,6 +1,6 @@
 //! Definition of the dynamic image type.
 
-use core::{BitDepth, PixelType, ImageBuffer2D, ImageType, Luma, LumaA, Rgb, RgbA};
+use core::{BitDepth, ImageBuffer2D, ImageType, Luma, LumaA, PixelType, Rgb, RgbA};
 
 use failure::Error;
 
@@ -87,7 +87,7 @@ impl DynamicImage {
     }
 
     /// Try extracting the image as an 8 bit grayscale image.
-    pub fn as_luma_u8(self) -> Result<Box<ImageBuffer2D<Luma<u8>>>, Error> {
+    pub fn into_luma_u8(self) -> Result<Box<ImageBuffer2D<Luma<u8>>>, Error> {
         match self {
             DynamicImage::LumaU8(img) => Ok(img),
             _ => bail!("Incorrect image type!"),
@@ -95,7 +95,7 @@ impl DynamicImage {
     }
 
     /// Try extracting the image as a 16 bit grayscale image.
-    pub fn as_luma_u16(self) -> Result<Box<ImageBuffer2D<Luma<u16>>>, Error> {
+    pub fn into_luma_u16(self) -> Result<Box<ImageBuffer2D<Luma<u16>>>, Error> {
         match self {
             DynamicImage::LumaU16(img) => Ok(img),
             _ => bail!("Incorrect image type!"),
@@ -103,7 +103,7 @@ impl DynamicImage {
     }
 
     /// Try extracting the image as an 8 bit grayscale image with alpha.
-    pub fn as_luma_alpha_u8(self) -> Result<Box<ImageBuffer2D<LumaA<u8>>>, Error> {
+    pub fn into_luma_alpha_u8(self) -> Result<Box<ImageBuffer2D<LumaA<u8>>>, Error> {
         match self {
             DynamicImage::LumaAU8(img) => Ok(img),
             _ => bail!("Incorrect image type!"),
@@ -111,7 +111,7 @@ impl DynamicImage {
     }
 
     /// Try extracting the image as a 16 bit grayscale image with alpha.
-    pub fn as_luma_alpha_u16(self) -> Result<Box<ImageBuffer2D<LumaA<u16>>>, Error> {
+    pub fn into_luma_alpha_u16(self) -> Result<Box<ImageBuffer2D<LumaA<u16>>>, Error> {
         match self {
             DynamicImage::LumaAU16(img) => Ok(img),
             _ => bail!("Incorrect image type!"),
@@ -119,7 +119,7 @@ impl DynamicImage {
     }
 
     /// Try extracting the image as an 8 bit color image.
-    pub fn as_rgb_u8(self) -> Result<Box<ImageBuffer2D<Rgb<u8>>>, Error> {
+    pub fn into_rgb_u8(self) -> Result<Box<ImageBuffer2D<Rgb<u8>>>, Error> {
         match self {
             DynamicImage::RgbU8(img) => Ok(img),
             _ => bail!("Incorrect image type!"),
@@ -127,7 +127,7 @@ impl DynamicImage {
     }
 
     /// Try extracting the image as a 16 bit color image.
-    pub fn as_rgb_u16(self) -> Result<Box<ImageBuffer2D<Rgb<u16>>>, Error> {
+    pub fn into_rgb_u16(self) -> Result<Box<ImageBuffer2D<Rgb<u16>>>, Error> {
         match self {
             DynamicImage::RgbU16(img) => Ok(img),
             _ => bail!("Incorrect image type!"),
@@ -135,7 +135,7 @@ impl DynamicImage {
     }
 
     /// Try extracting the image as an 8 bit color image with alpha.
-    pub fn as_rgb_alpha_u8(self) -> Result<Box<ImageBuffer2D<RgbA<u8>>>, Error> {
+    pub fn into_rgb_alpha_u8(self) -> Result<Box<ImageBuffer2D<RgbA<u8>>>, Error> {
         match self {
             DynamicImage::RgbAU8(img) => Ok(img),
             _ => bail!("Incorrect image type!"),
@@ -143,7 +143,7 @@ impl DynamicImage {
     }
 
     /// Try extracting the image as a 16 bit color image with alpha.
-    pub fn as_rgb_alpha_u16(self) -> Result<Box<ImageBuffer2D<RgbA<u16>>>, Error> {
+    pub fn into_rgb_alpha_u16(self) -> Result<Box<ImageBuffer2D<RgbA<u16>>>, Error> {
         match self {
             DynamicImage::RgbAU16(img) => Ok(img),
             _ => bail!("Incorrect image type!"),

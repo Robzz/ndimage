@@ -1,5 +1,6 @@
-//! Contains the definitions of the core image types and traits.
+//! Core image types and traits.
 
+pub mod color_convert;
 mod dynamic_image;
 mod image2d;
 mod neighborhood;

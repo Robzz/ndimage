@@ -13,7 +13,8 @@ mod bench_arithm {
 
     use num_traits::{Bounded, One};
     use rand::{
-        distributions::{uniform::SampleUniform, Distribution, Standard, Uniform}, thread_rng,
+        distributions::{uniform::SampleUniform, Distribution, Standard, Uniform},
+        thread_rng
     };
     use test::Bencher;
 
@@ -92,7 +93,7 @@ mod bench_arithm {
                         let d = Uniform::new(
                             <<$pix as Pixel>::Subpixel as Bounded>::min_value()
                                 + <<$pix as Pixel>::Subpixel as One>::one(),
-                            <<$pix as Pixel>::Subpixel as Bounded>::max_value(),
+                            <<$pix as Pixel>::Subpixel as Bounded>::max_value()
                         );
                         let img1 =
                             ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
@@ -109,7 +110,7 @@ mod bench_arithm {
                         let d = Uniform::new(
                             <<$pix as Pixel>::Subpixel as Bounded>::min_value()
                                 + <<$pix as Pixel>::Subpixel as One>::one(),
-                            <<$pix as Pixel>::Subpixel as Bounded>::max_value(),
+                            <<$pix as Pixel>::Subpixel as Bounded>::max_value()
                         );
                         let imgbuf1 =
                             ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
@@ -128,7 +129,7 @@ mod bench_arithm {
                         let d = Uniform::new(
                             <<$pix as Pixel>::Subpixel as Bounded>::min_value()
                                 + <<$pix as Pixel>::Subpixel as One>::one(),
-                            <<$pix as Pixel>::Subpixel as Bounded>::max_value(),
+                            <<$pix as Pixel>::Subpixel as Bounded>::max_value()
                         );
                         let img1 =
                             ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
@@ -145,7 +146,7 @@ mod bench_arithm {
                         let d = Uniform::new(
                             <<$pix as Pixel>::Subpixel as Bounded>::min_value()
                                 + <<$pix as Pixel>::Subpixel as One>::one(),
-                            <<$pix as Pixel>::Subpixel as Bounded>::max_value(),
+                            <<$pix as Pixel>::Subpixel as Bounded>::max_value()
                         );
                         let imgbuf1 =
                             ImageBuffer2D::<$pix>::rand_with_distr(W, H, &mut thread_rng(), &d);
@@ -177,7 +178,7 @@ mod bench_arithm {
         fn generate_luma<S>(width: u32, height: u32) -> ImageBuffer<Luma<S>, Vec<S>>
         where
             S: Primitive + 'static,
-            Standard: Distribution<S>,
+            Standard: Distribution<S>
         {
             let mut rng = thread_rng();
             let mut img = ImageBuffer::new(width, height);
@@ -190,14 +191,14 @@ mod bench_arithm {
         fn generate_luma_nonzero<S>(width: u32, height: u32) -> ImageBuffer<Luma<S>, Vec<S>>
         where
             S: Primitive + SampleUniform + Bounded + 'static,
-            Standard: Distribution<S>,
+            Standard: Distribution<S>
         {
             let distr = Uniform::new(<S as One>::one(), <S as Bounded>::max_value());
             let mut rng = thread_rng();
             let mut img = ImageBuffer::new(width, height);
             for pix in img.pixels_mut() {
                 *pix = Luma {
-                    data: [rng.sample(&distr)],
+                    data: [rng.sample(&distr)]
                 }
             }
             img
@@ -219,7 +220,7 @@ mod bench_arithm {
                                 img1.pixels().zip(img2.pixels()).zip(img.pixels_mut())
                             {
                                 *p = Luma {
-                                    data: [p1[0] + p2[0]],
+                                    data: [p1[0] + p2[0]]
                                 };
                             }
                         });
@@ -236,7 +237,7 @@ mod bench_arithm {
                                 img1.pixels().zip(img2.pixels()).zip(img.pixels_mut())
                             {
                                 *p = Luma {
-                                    data: [p1[0] - p2[0]],
+                                    data: [p1[0] - p2[0]]
                                 }
                             }
                         });
@@ -253,7 +254,7 @@ mod bench_arithm {
                                 img1.pixels().zip(img2.pixels()).zip(img.pixels_mut())
                             {
                                 *p = Luma {
-                                    data: [p1[0] * p2[0]],
+                                    data: [p1[0] * p2[0]]
                                 }
                             }
                         });
@@ -270,7 +271,7 @@ mod bench_arithm {
                                 img1.pixels().zip(img2.pixels()).zip(img.pixels_mut())
                             {
                                 *p = Luma {
-                                    data: [p1[0] / p2[0]],
+                                    data: [p1[0] / p2[0]]
                                 }
                             }
                         });
@@ -287,7 +288,7 @@ mod bench_arithm {
                                 img1.pixels().zip(img2.pixels()).zip(img.pixels_mut())
                             {
                                 *p = Luma {
-                                    data: [p1[0] % p2[0]],
+                                    data: [p1[0] % p2[0]]
                                 }
                             }
                         });

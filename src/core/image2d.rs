@@ -1,16 +1,17 @@
 //! Defines a generic 2D image type.
 #![allow(unknown_lints, deref_addrof)]
 
-use core::{Luma, LumaA, Pixel, PixelType, Primitive, Rect, Rgb, RgbA};
+use core::{Luma, LumaA, Pixel, PixelCast, PixelType, Primitive, Rect, Rgb, RgbA};
 
 use failure::Error;
 use ndarray;
 use ndarray::prelude::*;
 use ndarray::{OwnedRepr, ViewRepr};
-use num_traits::Zero;
+use num_traits::Signed;
 #[cfg(feature = "rand_integration")]
 use rand::{
-    distributions::{Distribution, Standard}, Rng,
+    distributions::{Distribution, Standard},
+    Rng
 };
 
 use std::cmp::min;
@@ -23,7 +24,7 @@ pub enum BitDepth {
     /// 8 bit image.
     _8,
     /// 16 bit image.
-    _16,
+    _16
 }
 
 /// Type of an image.
@@ -32,7 +33,7 @@ pub type ImageType = (PixelType, BitDepth);
 /// 2-dimensional image type.
 pub trait Image2D<P>: Sync
 where
-    P: Pixel,
+    P: Pixel
 {
     /// Return a slice if the view points to contiguous memory in standard order.
     fn as_slice(&self) -> Option<&[P]>;
@@ -47,8 +48,10 @@ where
 
     /// Return the width of the image.
     fn width(&self) -> u32;
+
     /// Return the height of the image.
     fn height(&self) -> u32;
+
     /// Return the dimensions of the image as a `(width, height)` tuple.
     fn dimensions(&self) -> (u32, u32) {
         (self.width(), self.height())
@@ -98,7 +101,7 @@ where
                 x_left,
                 y_top,
                 (min(w_signed, right + 1) as u32) - x_left,
-                (min(h_signed, bottom + 1) as u32) - y_top,
+                (min(h_signed, bottom + 1) as u32) - y_top
             ))
         } else {
             None
@@ -117,7 +120,7 @@ where
 
 impl<'a, P> IntoIterator for &'a Image2D<P>
 where
-    P: Pixel + 'a,
+    P: Pixel + 'a
 {
     type Item = &'a P;
     type IntoIter = Iter<'a, P>;
@@ -129,7 +132,7 @@ where
 
 impl<P> Index<(u32, u32)> for Image2D<P>
 where
-    P: Pixel,
+    P: Pixel
 {
     type Output = P;
 
@@ -144,7 +147,7 @@ macro_rules! impl_image_op {
         impl<'a, 'b, P> $op_name<&'a Image2DRepr<OwnedRepr<P>, P>>
             for &'b Image2DRepr<OwnedRepr<P>, P>
         where
-            P: Pixel + $op_name<P, Output = P>,
+            P: Pixel + $op_name<P, Output = P>
         {
             type Output = Result<ImageBuffer2D<P>, Error>;
 
@@ -154,7 +157,7 @@ macro_rules! impl_image_op {
                     bail!("Image dimensions do not match");
                 }
                 Ok(ImageBuffer2D {
-                    buffer: (&self.buffer).$op_fn(&rhs.buffer),
+                    buffer: (&self.buffer).$op_fn(&rhs.buffer)
                 })
             }
         }
@@ -162,7 +165,7 @@ macro_rules! impl_image_op {
         impl<'a, 'b, 'c, P> $op_name<&'a Image2DRepr<ViewRepr<&'b P>, P>>
             for &'c Image2DRepr<OwnedRepr<P>, P>
         where
-            P: Pixel + $op_name<P, Output = P>,
+            P: Pixel + $op_name<P, Output = P>
         {
             type Output = Result<ImageBuffer2D<P>, Error>;
 
@@ -172,7 +175,7 @@ macro_rules! impl_image_op {
                     bail!("Image dimensions do not match");
                 }
                 Ok(ImageBuffer2D {
-                    buffer: (&self.buffer).$op_fn(&rhs.buffer),
+                    buffer: (&self.buffer).$op_fn(&rhs.buffer)
                 })
             }
         }
@@ -180,7 +183,7 @@ macro_rules! impl_image_op {
         impl<'a, 'b, 'c, P> $op_name<&'a Image2DRepr<OwnedRepr<P>, P>>
             for &'b Image2DRepr<ViewRepr<&'c P>, P>
         where
-            P: Pixel + $op_name<P, Output = P>,
+            P: Pixel + $op_name<P, Output = P>
         {
             type Output = Result<ImageBuffer2D<P>, Error>;
 
@@ -190,7 +193,7 @@ macro_rules! impl_image_op {
                     bail!("Image dimensions do not match");
                 }
                 Ok(ImageBuffer2D {
-                    buffer: (&self.buffer).$op_fn(&rhs.buffer),
+                    buffer: (&self.buffer).$op_fn(&rhs.buffer)
                 })
             }
         }
@@ -198,7 +201,7 @@ macro_rules! impl_image_op {
         impl<'a, 'b, 'c, 'd, P> $op_name<&'a Image2DRepr<ViewRepr<&'b P>, P>>
             for &'c Image2DRepr<ViewRepr<&'d P>, P>
         where
-            P: Pixel + $op_name<P, Output = P>,
+            P: Pixel + $op_name<P, Output = P>
         {
             type Output = Result<ImageBuffer2D<P>, Error>;
 
@@ -208,7 +211,7 @@ macro_rules! impl_image_op {
                     bail!("Image dimensions do not match");
                 }
                 Ok(ImageBuffer2D {
-                    buffer: (&self.buffer).$op_fn(&rhs.buffer),
+                    buffer: (&self.buffer).$op_fn(&rhs.buffer)
                 })
             }
         }
@@ -216,7 +219,7 @@ macro_rules! impl_image_op {
         // Image2D impls
         impl<'a, 'b, P> $op_name<&'a dyn Image2D<P>> for &'b dyn Image2D<P>
         where
-            P: Pixel + $op_name<P, Output = P>,
+            P: Pixel + $op_name<P, Output = P>
         {
             type Output = Result<ImageBuffer2D<P>, Error>;
 
@@ -240,7 +243,7 @@ impl_image_op!(Rem, rem);
 /// Contains operations on mutable images.
 pub trait Image2DMut<P>: Image2D<P>
 where
-    P: Pixel,
+    P: Pixel
 {
     /// Return a mutable reference to the requested pixel.
     ///
@@ -286,7 +289,7 @@ where
     /// Blit (i.e. copy) a `Rect` from the source image onto the destination image.
     fn blit_rect(&mut self, src_rect: Rect, dst_rect: Rect, img: &Image2D<P>) -> Result<(), Error>
     where
-        Self: ::std::marker::Sized,
+        Self: ::std::marker::Sized
     {
         if src_rect.size() != dst_rect.size() {
             let (ws, hs) = src_rect.size();
@@ -323,7 +326,7 @@ where
 impl<P> IndexMut<(u32, u32)> for Image2DMut<P>
 where
     P: Pixel,
-    Image2DMut<P>: Index<(u32, u32), Output = P>,
+    Image2DMut<P>: Index<(u32, u32), Output = P>
 {
     fn index_mut(&mut self, idx: (u32, u32)) -> &mut P {
         self.get_pixel_mut(idx.0, idx.1)
@@ -332,7 +335,7 @@ where
 
 impl<'a, P> IntoIterator for &'a mut Image2DMut<P>
 where
-    P: Pixel + 'a,
+    P: Pixel + 'a
 {
     type Item = &'a mut P;
     type IntoIter = IterMut<'a, P>;
@@ -347,15 +350,39 @@ where
 pub struct Image2DRepr<D, P>
 where
     P: Pixel,
-    D: ndarray::Data<Elem = P>,
+    D: ndarray::Data<Elem = P>
 {
-    buffer: ArrayBase<D, Ix2>,
+    buffer: ArrayBase<D, Ix2>
+}
+
+impl<D, P, S> Image2DRepr<D, P>
+where
+    P: Pixel<Subpixel = S>,
+    D: ndarray::Data<Elem = P>,
+    S: Primitive
+{
+    /// Apply the given functor to every pixel in the image and return the result.
+    pub fn map(&self, f: impl Fn(&P) -> P) -> ImageBuffer2D<P> {
+        let mut res = ImageBuffer2D::new(self.width(), self.height());
+        for (p_dst, p_src) in (&mut res).into_iter().zip(self.into_iter()) {
+            *p_dst = f(p_src);
+        }
+        res
+    }
+
+    /// Return a copy of the image with each pixel mapped to its absolute value.
+    pub fn abs(&self) -> ImageBuffer2D<P>
+    where
+        S: Signed
+    {
+        self.map(|p| p.abs())
+    }
 }
 
 impl<D, P> PartialEq for Image2DRepr<D, P>
 where
     P: Pixel,
-    D: ndarray::Data<Elem = P>,
+    D: ndarray::Data<Elem = P>
 {
     fn eq(&self, other: &Image2DRepr<D, P>) -> bool {
         self.dimensions() == other.dimensions() && self.iter().eq(other.iter())
@@ -365,14 +392,14 @@ where
 unsafe impl<D, P> Sync for Image2DRepr<D, P>
 where
     P: Pixel,
-    D: ndarray::Data<Elem = P>,
+    D: ndarray::Data<Elem = P>
 {
 }
 
 impl<D, P> Image2D<P> for Image2DRepr<D, P>
 where
     P: Pixel,
-    D: ndarray::Data<Elem = P>,
+    D: ndarray::Data<Elem = P>
 {
     fn width(&self) -> u32 {
         self.buffer.cols() as u32
@@ -396,7 +423,7 @@ where
 
     fn get_view(&self) -> Image2DView<P> {
         Image2DView {
-            buffer: self.buffer.view(),
+            buffer: self.buffer.view()
         }
     }
 
@@ -408,7 +435,7 @@ where
     fn row(&self, y: u32) -> Option<RowIter<P>> {
         if y < self.height() {
             Some(RowIter {
-                iter: self.buffer.slice(s![y as usize, ..]).into_iter(),
+                iter: self.buffer.slice(s![y as usize, ..]).into_iter()
             })
         } else {
             None
@@ -417,14 +444,14 @@ where
 
     fn rows(&self) -> RowsIter<P> {
         RowsIter {
-            iter: self.buffer.axis_iter(Axis(0)),
+            iter: self.buffer.axis_iter(Axis(0))
         }
     }
 
     fn col(&self, x: u32) -> Option<ColIter<P>> {
         if x < self.width() {
             Some(ColIter {
-                iter: self.buffer.slice(s![.., x as usize]).into_iter(),
+                iter: self.buffer.slice(s![.., x as usize]).into_iter()
             })
         } else {
             None
@@ -433,7 +460,7 @@ where
 
     fn cols(&self) -> ColsIter<P> {
         ColsIter {
-            iter: self.buffer.axis_iter(Axis(1)),
+            iter: self.buffer.axis_iter(Axis(1))
         }
     }
 
@@ -444,7 +471,7 @@ where
         let bottom = top + rect.height() as isize;
 
         RectIter {
-            iter: self.buffer.slice(s![top..bottom, left..right]).into_iter(),
+            iter: self.buffer.slice(s![top..bottom, left..right]).into_iter()
         }
     }
 
@@ -454,7 +481,7 @@ where
 
     fn to_owned(&self) -> ImageBuffer2D<P> {
         ImageBuffer2D {
-            buffer: self.buffer.to_owned(),
+            buffer: self.buffer.to_owned()
         }
     }
 
@@ -463,7 +490,7 @@ where
             buffer: self.buffer.slice(s![
                 rect.top() as usize..(rect.bottom() + 1) as usize,
                 rect.left() as usize..(rect.right() + 1) as usize
-            ]),
+            ])
         }
     }
 }
@@ -471,7 +498,7 @@ where
 impl<D, P> Index<(u32, u32)> for Image2DRepr<D, P>
 where
     P: Pixel,
-    D: ndarray::Data<Elem = P>,
+    D: ndarray::Data<Elem = P>
 {
     type Output = P;
 
@@ -483,7 +510,7 @@ where
 impl<D, P> Image2DMut<P> for Image2DRepr<D, P>
 where
     P: Pixel,
-    D: ndarray::DataMut<Elem = P>,
+    D: ndarray::DataMut<Elem = P>
 {
     fn get_pixel_mut(&mut self, x: u32, y: u32) -> &mut P {
         &mut self.buffer[[y as usize, x as usize]]
@@ -500,7 +527,7 @@ where
     fn row_mut(&mut self, y: u32) -> Option<RowIterMut<P>> {
         if y < self.height() {
             Some(RowIterMut {
-                iter: self.buffer.slice_mut(s![y as usize, ..]).into_iter(),
+                iter: self.buffer.slice_mut(s![y as usize, ..]).into_iter()
             })
         } else {
             None
@@ -509,14 +536,14 @@ where
 
     fn rows_mut(&mut self) -> RowsIterMut<P> {
         RowsIterMut {
-            iter: self.buffer.axis_iter_mut(Axis(0)),
+            iter: self.buffer.axis_iter_mut(Axis(0))
         }
     }
 
     fn col_mut(&mut self, x: u32) -> Option<ColIterMut<P>> {
         if x < self.width() {
             Some(ColIterMut {
-                iter: self.buffer.slice_mut(s![.., x as usize]).into_iter(),
+                iter: self.buffer.slice_mut(s![.., x as usize]).into_iter()
             })
         } else {
             None
@@ -525,7 +552,7 @@ where
 
     fn cols_mut(&mut self) -> ColsIterMut<P> {
         ColsIterMut {
-            iter: self.buffer.axis_iter_mut(Axis(1)),
+            iter: self.buffer.axis_iter_mut(Axis(1))
         }
     }
 
@@ -536,9 +563,10 @@ where
         let bottom = top + rect.height() as isize;
 
         RectIterMut {
-            iter: self.buffer
+            iter: self
+                .buffer
                 .slice_mut(s![top..bottom, left..right])
-                .into_iter(),
+                .into_iter()
         }
     }
 
@@ -555,7 +583,7 @@ where
             buffer: self.buffer.slice_mut(s![
                 rect.top() as usize..(rect.bottom() + 1) as usize,
                 rect.left() as usize..(rect.right() + 1) as usize
-            ]),
+            ])
         }
     }
 }
@@ -564,7 +592,7 @@ impl<D, P> IndexMut<(u32, u32)> for Image2DRepr<D, P>
 where
     P: Pixel,
     D: ndarray::DataMut<Elem = P>,
-    Image2DRepr<D, P>: Index<(u32, u32), Output = P>,
+    Image2DRepr<D, P>: Index<(u32, u32), Output = P>
 {
     fn index_mut(&mut self, idx: (u32, u32)) -> &mut P {
         self.get_pixel_mut(idx.0, idx.1)
@@ -574,7 +602,7 @@ where
 impl<'a, D, P> IntoIterator for &'a Image2DRepr<D, P>
 where
     P: Pixel + 'a,
-    D: ndarray::Data<Elem = P>,
+    D: ndarray::Data<Elem = P>
 {
     type Item = &'a P;
     type IntoIter = Iter<'a, P>;
@@ -587,7 +615,7 @@ where
 impl<'a, D, P> IntoIterator for &'a mut Image2DRepr<D, P>
 where
     P: Pixel + 'a,
-    D: ndarray::DataMut<Elem = P>,
+    D: ndarray::DataMut<Elem = P>
 {
     type Item = &'a mut P;
     type IntoIter = IterMut<'a, P>;
@@ -610,15 +638,12 @@ type IterMut<'a, P> = ndarray::iter::IterMut<'a, P, Ix2>;
 
 impl<P> ImageBuffer2D<P>
 where
-    P: Pixel,
+    P: Pixel
 {
     /// Create a new owned image of specified dimensions filled with zeros.
-    pub fn new(width: u32, height: u32) -> ImageBuffer2D<P>
-    where
-        P: Pixel + Zero,
-    {
+    pub fn new(width: u32, height: u32) -> ImageBuffer2D<P> {
         ImageBuffer2D {
-            buffer: Array2::zeros((height as usize, width as usize)),
+            buffer: Array2::zeros((height as usize, width as usize))
         }
     }
 
@@ -657,12 +682,12 @@ where
     /// Generate a new image from a closure that will be called with the index of each pixel.
     pub fn generate<F>(w: u32, h: u32, mut f: F) -> ImageBuffer2D<P>
     where
-        F: FnMut((u32, u32)) -> P,
+        F: FnMut((u32, u32)) -> P
     {
         ImageBuffer2D {
             buffer: Array2::from_shape_fn(Ix2(h as usize, w as usize), |(y, x)| {
                 f((x as u32, y as u32))
-            }),
+            })
         }
     }
 }
@@ -670,13 +695,13 @@ where
 #[cfg(feature = "rand_integration")]
 impl<P> ImageBuffer2D<P>
 where
-    P: Pixel,
+    P: Pixel
 {
     /// Generate a random image with the Standard distribution.
     pub fn rand<R>(width: u32, height: u32, rng: &mut R) -> ImageBuffer2D<P>
     where
         R: Rng,
-        Standard: Distribution<P::Subpixel>,
+        Standard: Distribution<P::Subpixel>
     {
         ImageBuffer2D::generate(width, height, |(_x, _y)| P::rand(rng))
     }
@@ -686,11 +711,11 @@ where
         width: u32,
         height: u32,
         rng: &mut R,
-        distr: &D,
+        distr: &D
     ) -> ImageBuffer2D<P>
     where
         R: Rng,
-        D: Distribution<P::Subpixel>,
+        D: Distribution<P::Subpixel>
     {
         ImageBuffer2D::generate(width, height, |(_x, _y)| P::rand_with_distr(rng, distr))
     }
@@ -777,7 +802,7 @@ impl_double_ended_iterators!(
 /// Discard the alpha component of an `RgbA` image.
 pub fn rgba_to_rgb<P>(img: &Image2D<RgbA<P>>) -> ImageBuffer2D<Rgb<P>>
 where
-    P: Primitive,
+    P: Primitive
 {
     let mut res = ImageBuffer2D::<Rgb<P>>::new(img.width(), img.height());
     for (src_pixel, dst_pixel) in img.into_iter().zip((&mut res).into_iter()) {
@@ -789,7 +814,7 @@ where
 /// Discard the alpha component of a `LumaA` image.
 pub fn luma_alpha_to_luma<P>(img: &Image2D<LumaA<P>>) -> ImageBuffer2D<Luma<P>>
 where
-    P: Primitive,
+    P: Primitive
 {
     let mut res = ImageBuffer2D::<Luma<P>>::new(img.width(), img.height());
     for (src_pixel, dst_pixel) in img.into_iter().zip((&mut res).into_iter()) {
@@ -798,9 +823,22 @@ where
     res
 }
 
+/// Perform the cast.
+pub fn cast<O, P>(img: &Image2D<P>) -> ImageBuffer2D<<P as PixelCast<O>>::Output>
+where
+    P: PixelCast<O>,
+    O: Primitive
+{
+    let mut result = ImageBuffer2D::new(img.width(), img.height());
+    for (dst_pix, src_pix) in result.iter_mut().zip(img.iter()) {
+        *dst_pix = src_pix.cast();
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
-    use core::{Image2D, Image2DMut, ImageBuffer2D, Luma, Pixel, Rect, Region};
+    use core::{cast, Image2D, Image2DMut, ImageBuffer2D, Luma, Pixel, Rect, Region};
 
     use num_traits::Zero;
     #[cfg(feature = "rand_integration")]
@@ -834,7 +872,7 @@ mod tests {
     fn test_new() {
         fn test_zeros_helper<P>(w: u32, h: u32)
         where
-            P: Pixel + Zero + Debug,
+            P: Pixel + Zero + Debug
         {
             let img = ImageBuffer2D::<P>::new(w, h);
             assert_eq!((w, h), (img.width(), img.height()));
@@ -860,7 +898,8 @@ mod tests {
     fn test_enumerate_pixels() {
         let img = ImageBuffer2D::generate(5, 3, |(x, y)| Luma::from((2 * x + 3 * y) as u8));
 
-        for ((x, y), p) in img.enumerate_pixels()
+        for ((x, y), p) in img
+            .enumerate_pixels()
             .map(|((y, x), p)| ((x, y), p.channels()[0]))
         {
             assert_eq!((2 * x + 3 * y) as u8, p);
@@ -1228,5 +1267,14 @@ mod tests {
         let img = ImageBuffer2D::<Luma<u8>>::rand(1280, 720, &mut thread_rng());
         let sum = img.into_iter().fold(0u32, |acc, p| acc + p.data[0] as u32);
         assert!(sum > 100_000_000 && sum < 130_000_000);
+    }
+
+    #[test]
+    fn test_imagecast_u8_to_f64() {
+        let img = ImageBuffer2D::generate(3, 3, |(x, y)| Luma::new([3u8 * y as u8 + x as u8]));
+        let img_f64 = cast::<f64, Luma<u8>>(&img);
+        for pix in &img_f64 {
+            println!("{:?}", pix);
+        }
     }
 }

@@ -1,38 +1,47 @@
+extern crate failure;
 extern crate ndimage;
 
-use ndimage::io::png::{Decoder, Encoder8};
-use ndimage::processing::histogram;
+use ndimage::core::{
+    padding::Padding, DynamicImage, Image2D, ImageBuffer2D, Pixel, PixelCast, Primitive
+};
+use ndimage::io::{open, png::PngEncodable, save};
 use ndimage::processing::kernel::Kernel;
 
+use failure::Error;
+
 use std::env::{args, current_dir};
-use std::fs::File;
 
-fn main() {
-    let in_img = args().nth(1).unwrap();
-    let mut box_img = current_dir().unwrap();
-    let mut gaussian_img = current_dir().unwrap();
-    let mut equalized_img = current_dir().unwrap();
-    box_img.push("box.png");
-    gaussian_img.push("gaussian.png");
-    equalized_img.push("equalized.png");
-    let in_file = File::open(in_img).unwrap();
-    let box_file = File::create(box_img).unwrap();
-    let gaussian_file = File::create(gaussian_img).unwrap();
-    let equalized_file = File::create(equalized_img).unwrap();
-
-    let decoder = Decoder::new(&in_file).unwrap();
-    let img = decoder.read_luma_u8().unwrap();
-
+fn apply_convolutions<'a, P, T, Pf>(img: &'a Image2D<P>) -> Result<(), Error>
+where
+    P: Pixel<Subpixel = T> + PixelCast<f64, Output = Pf> + PngEncodable<P>,
+    Pf: Pixel<Subpixel = f64> + PixelCast<T, Output = P>,
+    T: Primitive
+{
     let box_kernel = Kernel::<f64>::box_(6);
     let gaussian_kernel = Kernel::gaussian(3., 6);
-    let box_img = box_kernel.convolve(&img);
-    let gaussian_img = gaussian_kernel.convolve(&img);
-    let equalized = histogram::equalize(&img);
+    let box_img: ImageBuffer2D<P> = box_kernel.convolve(img, Padding::Replicate);
+    let gaussian_img: ImageBuffer2D<P> = gaussian_kernel.convolve(img, Padding::Replicate);
 
-    let encoder = Encoder8::new();
-    encoder.write(box_file, &box_img).unwrap();
-    let encoder = Encoder8::new();
-    encoder.write(gaussian_file, &gaussian_img).unwrap();
-    let encoder = Encoder8::new();
-    encoder.write(equalized_file, &equalized).unwrap();
+    let mut box_file = current_dir()?;
+    let mut gaussian_file = current_dir()?;
+    box_file.push("box.png");
+    gaussian_file.push("gaussian.png");
+
+    save(box_file, &box_img)?;
+    save(gaussian_file, &gaussian_img)?;
+    Ok(())
+}
+
+fn main() -> Result<(), Error> {
+    let in_img = args().nth(1).unwrap();
+
+    let in_img_dyn = open(in_img)?;
+    match in_img_dyn {
+        DynamicImage::RgbU8(img) => apply_convolutions(img.as_ref()),
+        DynamicImage::LumaU8(img) => apply_convolutions(img.as_ref()),
+        _ => {
+            println!("Only 8 bit RGB and grayscale images are supported.");
+            Ok(())
+        }
+    }
 }

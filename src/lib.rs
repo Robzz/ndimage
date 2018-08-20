@@ -10,11 +10,14 @@ extern crate num_traits;
 extern crate png;
 #[cfg(feature = "rand_integration")]
 extern crate rand;
+//extern crate static_assertions;
 #[cfg(test)]
 extern crate tempfile;
 extern crate tiff;
 
 pub mod core;
+pub mod draw;
+pub mod features;
 mod helper;
 pub mod io;
 mod math;

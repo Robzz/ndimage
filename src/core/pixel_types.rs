@@ -1,17 +1,17 @@
 //! Contains the definitions of the various pixel types defined in this crate.
 
-use num_traits::cast::cast;
-use num_traits::{Bounded, One, Zero};
+use num_traits::{Bounded, NumCast, One, Zero};
 #[cfg(feature = "rand_integration")]
 use rand::{
-    distributions::{Distribution, Standard}, Rng,
+    distributions::{Distribution, Standard},
+    Rng
 };
 
 use core::{Pixel, PixelCast, Primitive};
 
 use std::convert::From;
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign,
+    Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,7 +38,7 @@ pub enum SubpixelType {
     /// u64
     F64,
     /// Intended for custom subpixel types.
-    Other,
+    Other
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,7 +51,7 @@ pub enum PixelType {
     /// Triple channel, i.e. color.
     Rgb,
     /// Quad channel, i.e. color with alpha.
-    RgbA,
+    RgbA
 }
 
 // TODO: impl_op! macro
@@ -60,7 +60,7 @@ macro_rules! impl_pixel_op {
     ($pix_t:ident : $n_channels:expr, $op:ident, $op_fn:ident) => {
         impl<P> $op for $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             type Output = $pix_t<P>;
 
@@ -75,7 +75,7 @@ macro_rules! impl_pixel_op {
 
         impl<'a, P> $op<$pix_t<P>> for &'a $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             type Output = $pix_t<P>;
 
@@ -90,7 +90,7 @@ macro_rules! impl_pixel_op {
 
         impl<'a, P> $op<&'a $pix_t<P>> for $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             type Output = $pix_t<P>;
 
@@ -105,7 +105,7 @@ macro_rules! impl_pixel_op {
 
         impl<'a, 'b, P> $op<&'a $pix_t<P>> for &'b $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             type Output = $pix_t<P>;
 
@@ -120,7 +120,7 @@ macro_rules! impl_pixel_op {
 
         impl<P> $op<P> for $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             type Output = $pix_t<P>;
 
@@ -135,7 +135,7 @@ macro_rules! impl_pixel_op {
 
         impl<'a, P> $op<P> for &'a $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             type Output = $pix_t<P>;
 
@@ -150,7 +150,7 @@ macro_rules! impl_pixel_op {
 
         impl<'a, P> $op<&'a P> for $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             type Output = $pix_t<P>;
 
@@ -165,7 +165,7 @@ macro_rules! impl_pixel_op {
 
         impl<'a, 'b, P> $op<&'a P> for &'b $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             type Output = $pix_t<P>;
 
@@ -184,7 +184,7 @@ macro_rules! impl_pixel_op_assign {
     ($pix_t:ident : $n_channels:expr, $op:ident, $op_fn:ident) => {
         impl<P> $op for $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             fn $op_fn(&mut self, rhs: $pix_t<P>) {
                 for (s, r) in self.data.iter_mut().zip(rhs.data.iter()) {
@@ -195,7 +195,7 @@ macro_rules! impl_pixel_op_assign {
 
         impl<'a, P> $op<&'a $pix_t<P>> for $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             fn $op_fn(&mut self, rhs: &'a $pix_t<P>) {
                 for (s, r) in self.data.iter_mut().zip(rhs.data.iter()) {
@@ -206,7 +206,7 @@ macro_rules! impl_pixel_op_assign {
 
         impl<P> $op<P> for $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             fn $op_fn(&mut self, rhs: P) {
                 for s in &mut self.data {
@@ -217,7 +217,7 @@ macro_rules! impl_pixel_op_assign {
 
         impl<'a, P> $op<&'a P> for $pix_t<P>
         where
-            P: Primitive,
+            P: Primitive
         {
             fn $op_fn(&mut self, rhs: &'a P) {
                 for s in &mut self.data {
@@ -337,6 +337,10 @@ macro_rules! impl_pixels {
                 p
             }
 
+            fn from_value(s: Self::Subpixel) -> Self {
+                $name { data: [s; $n_channels] }
+            }
+
             fn set_to_slice(&mut self, s: &[Self::Subpixel]) {
                 for (n, e) in self.data.iter_mut().zip(s.iter()) {
                     *n = *e;
@@ -375,20 +379,18 @@ macro_rules! impl_pixels {
             }
         }
 
-        impl<S, O> PixelCast<$name<O>, S, O> for $name<S>
-            where O: Primitive,
-                  S: Primitive
+        impl<P, O> PixelCast<O> for $name<P>
+            where P: Primitive,
+                  O: Primitive
         {
-            fn cast_from(&mut self, other: &$name<O>) {
-                for (src, dst) in other.channels().into_iter().zip(self.channels_mut().into_iter()) {
-                    *dst = cast::<O, S>(src.clone()).unwrap_or(<S as Zero>::zero());
-                }
-            }
+            type Output = $name<O>;
 
-            fn cast_to(&self, other: &mut $name<O>) {
-                for (dst, src) in other.channels_mut().into_iter().zip(self.channels().into_iter()) {
-                    *dst = cast::<S, O>(src.clone()).unwrap_or(<O as Zero>::zero());
+            fn cast(&self) -> $name<O> {
+                let mut data_o: [O; $n_channels] = [Zero::zero(); $n_channels];
+                for i in 0..$n_channels {
+                    data_o[i] = NumCast::from(self.data[i]).unwrap_or(O::zero());
                 }
+                $name { data: data_o }
             }
         }
     )+}
@@ -407,51 +409,51 @@ impl_pixels!(
 
 impl<P> From<LumaA<P>> for Luma<P>
 where
-    P: Primitive,
+    P: Primitive
 {
     fn from(pixel: LumaA<P>) -> Luma<P> {
         Luma {
-            data: [pixel.data[0]],
+            data: [pixel.data[0]]
         }
     }
 }
 
 impl<'a, P> From<&'a LumaA<P>> for Luma<P>
 where
-    P: Primitive,
+    P: Primitive
 {
     fn from(pixel: &'a LumaA<P>) -> Luma<P> {
         Luma {
-            data: [pixel.data[0]],
+            data: [pixel.data[0]]
         }
     }
 }
 
 impl<P> From<RgbA<P>> for Rgb<P>
 where
-    P: Primitive,
+    P: Primitive
 {
     fn from(pixel: RgbA<P>) -> Rgb<P> {
         Rgb {
-            data: [pixel.data[0], pixel.data[1], pixel.data[2]],
+            data: [pixel.data[0], pixel.data[1], pixel.data[2]]
         }
     }
 }
 
 impl<'a, P> From<&'a RgbA<P>> for Rgb<P>
 where
-    P: Primitive,
+    P: Primitive
 {
     fn from(pixel: &'a RgbA<P>) -> Rgb<P> {
         Rgb {
-            data: [pixel.data[0], pixel.data[1], pixel.data[2]],
+            data: [pixel.data[0], pixel.data[1], pixel.data[2]]
         }
     }
 }
 
 impl<P> From<P> for Luma<P>
 where
-    P: Primitive,
+    P: Primitive
 {
     fn from(data: P) -> Luma<P> {
         Luma { data: [data] }

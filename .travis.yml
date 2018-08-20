@@ -43,13 +43,13 @@ jobs:
   fast_finish: true
   include:
     - stage: pre-build checks
-      rust: stable
+      rust: nightly
       name: "Rustfmt coding style conformance"
       addons: { }
       cache: false
       before_script: rustup component add rustfmt-preview
       script:
-        - cargo fmt -- --write-mode=check
+        - cargo +nightly fmt -- --check
       after_success:
     - stage: static analysis
       name: "Clippy"

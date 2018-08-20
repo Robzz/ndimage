@@ -16,9 +16,8 @@ fn main() {
             Arg::with_name("INPUT")
                 .help("Sets the input image file")
                 .required(true)
-                .index(1),
-        )
-        .get_matches();
+                .index(1)
+        ).get_matches();
 
     let img_path = matches.value_of("INPUT").unwrap();
     let in_file = File::open(img_path).unwrap();

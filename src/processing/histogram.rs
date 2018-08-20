@@ -13,7 +13,7 @@ impl HistPixel for Luma<i8> {}
 
 /// Represent a histogram of a greyscale 8-bit image.
 pub struct Histogram {
-    v: [u32; 256],
+    v: [u32; 256]
 }
 
 impl Histogram {
@@ -50,7 +50,7 @@ impl Histogram {
 
 impl<'a, P> From<&'a Image2D<P>> for Histogram
 where
-    P: HistPixel,
+    P: HistPixel
 {
     /// Construct a Histogram from an image.
     fn from(img: &'a Image2D<P>) -> Histogram {
@@ -66,7 +66,7 @@ where
 /// Adjust the contrast of an image by histogram equalization.
 pub fn equalize<P>(img: &Image2D<P>) -> ImageBuffer2D<P>
 where
-    P: HistPixel,
+    P: HistPixel
 {
     let h: Histogram = img.into();
     let cumul = h.cumulative();

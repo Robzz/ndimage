@@ -14,20 +14,20 @@ pub enum Padding {
     /// Wrap around.
     Wrap,
     /// Mirror borders.
-    Mirror,
+    Mirror
 }
 
 impl Padding {
     /// Apply the padding to an image.
     pub fn apply<P>(&self, img: &Image2D<P>, radius: u32) -> ImageBuffer2D<P>
     where
-        P: Pixel + Zero,
+        P: Pixel + Zero
     {
         match self {
             Padding::Zero => pad_zeros(img, radius),
             Padding::Replicate => pad_replicate(img, radius),
             Padding::Wrap => pad_wrap(img, radius),
-            Padding::Mirror => pad_mirror(img, radius),
+            Padding::Mirror => pad_mirror(img, radius)
         }
     }
 }
@@ -35,7 +35,7 @@ impl Padding {
 /// Pad an image with zeros.
 pub fn pad_zeros<P>(img: &Image2D<P>, radius: u32) -> ImageBuffer2D<P>
 where
-    P: Pixel + Zero,
+    P: Pixel + Zero
 {
     let (w, h) = img.dimensions();
     let mut padded = ImageBuffer2D::new(w + 2 * radius, h + 2 * radius);
@@ -47,7 +47,7 @@ where
 /// Pad an image by replicating its borders.
 pub fn pad_replicate<P>(img: &Image2D<P>, radius: u32) -> ImageBuffer2D<P>
 where
-    P: Pixel + Zero,
+    P: Pixel + Zero
 {
     let mut padded = pad_zeros(img, radius);
 
@@ -64,7 +64,7 @@ where
         fill_corner(
             img.width() + radius,
             img.height() + radius,
-            img.get_pixel(img.width() - 1, img.height() - 1),
+            img.get_pixel(img.width() - 1, img.height() - 1)
         );
     }
     {
@@ -90,7 +90,7 @@ where
             img.width() + radius,
             radius,
             radius,
-            img.height(),
+            img.height()
         ));
         for (mut row, value) in outer_iter.rows_mut().zip(inner_iter) {
             row.fill(value.clone());
@@ -103,7 +103,7 @@ where
             radius,
             img.height() + radius,
             img.width(),
-            radius,
+            radius
         ));
         for (mut col, value) in outer_iter.cols_mut().zip(inner_iter) {
             col.fill(value.clone());
@@ -116,7 +116,7 @@ where
 /// Pad an image by wrapping around its borders.
 pub fn pad_wrap<P>(img: &Image2D<P>, radius: u32) -> ImageBuffer2D<P>
 where
-    P: Pixel + Zero,
+    P: Pixel + Zero
 {
     let mut padded = pad_zeros(img, radius);
 
@@ -126,35 +126,35 @@ where
         };
         copy_subimage(
             Rect::new(0, 0, radius, radius),
-            Rect::new(img.width() + radius, img.height() + radius, radius, radius),
+            Rect::new(img.width() + radius, img.height() + radius, radius, radius)
         );
         copy_subimage(
             Rect::new(img.width() - radius, 0, radius, radius),
-            Rect::new(0, img.height() + radius, radius, radius),
+            Rect::new(0, img.height() + radius, radius, radius)
         );
         copy_subimage(
             Rect::new(0, img.height() - radius, radius, radius),
-            Rect::new(img.width() + radius, 0, radius, radius),
+            Rect::new(img.width() + radius, 0, radius, radius)
         );
         copy_subimage(
             Rect::new(img.width() - radius, img.height() - radius, radius, radius),
-            Rect::new(0, 0, radius, radius),
+            Rect::new(0, 0, radius, radius)
         );
         copy_subimage(
             Rect::new(0, 0, img.width(), radius),
-            Rect::new(radius, img.height() + radius, img.width(), radius),
+            Rect::new(radius, img.height() + radius, img.width(), radius)
         );
         copy_subimage(
             Rect::new(0, 0, radius, img.height()),
-            Rect::new(img.width() + radius, radius, radius, img.height()),
+            Rect::new(img.width() + radius, radius, radius, img.height())
         );
         copy_subimage(
             Rect::new(img.width() - radius, 0, radius, img.height()),
-            Rect::new(0, radius, radius, img.height()),
+            Rect::new(0, radius, radius, img.height())
         );
         copy_subimage(
             Rect::new(0, img.height() - radius, img.width(), radius),
-            Rect::new(radius, 0, img.width(), radius),
+            Rect::new(radius, 0, img.width(), radius)
         );
     }
 
@@ -164,7 +164,7 @@ where
 /// Pad an image by mirroring its borders.
 pub fn pad_mirror<P>(img: &Image2D<P>, radius: u32) -> ImageBuffer2D<P>
 where
-    P: Pixel + Zero,
+    P: Pixel + Zero
 {
     let mut padded = pad_zeros(img, radius);
 
@@ -180,19 +180,19 @@ where
         };
         copy_and_mirror_subimage_both(
             Rect::new(0, 0, radius, radius),
-            Rect::new(0, 0, radius, radius),
+            Rect::new(0, 0, radius, radius)
         );
         copy_and_mirror_subimage_both(
             Rect::new(img.width() - radius, 0, radius, radius),
-            Rect::new(img.width() + radius, 0, radius, radius),
+            Rect::new(img.width() + radius, 0, radius, radius)
         );
         copy_and_mirror_subimage_both(
             Rect::new(0, img.height() - radius, radius, radius),
-            Rect::new(0, img.height() + radius, radius, radius),
+            Rect::new(0, img.height() + radius, radius, radius)
         );
         copy_and_mirror_subimage_both(
             Rect::new(img.width() - radius, img.height() - radius, radius, radius),
-            Rect::new(img.width() + radius, img.height() + radius, radius, radius),
+            Rect::new(img.width() + radius, img.height() + radius, radius, radius)
         );
     }
     {
@@ -207,11 +207,11 @@ where
         };
         copy_and_mirror_subimage_hor(
             Rect::new(0, 0, radius, img.height()),
-            Rect::new(0, radius, radius, img.height()),
+            Rect::new(0, radius, radius, img.height())
         );
         copy_and_mirror_subimage_hor(
             Rect::new(img.width() - radius, 0, radius, img.height()),
-            Rect::new(img.width() + radius, radius, radius, img.height()),
+            Rect::new(img.width() + radius, radius, radius, img.height())
         );
     }
     {
@@ -226,11 +226,11 @@ where
         };
         copy_and_mirror_subimage_ver(
             Rect::new(0, 0, img.width(), radius),
-            Rect::new(radius, 0, img.width(), radius),
+            Rect::new(radius, 0, img.width(), radius)
         );
         copy_and_mirror_subimage_ver(
             Rect::new(0, img.height() - radius, img.width(), radius),
-            Rect::new(radius, img.height() + radius, img.width(), radius),
+            Rect::new(radius, img.height() + radius, img.width(), radius)
         );
     }
 

@@ -6,16 +6,17 @@ extern crate ndimage;
 
 use ndimage::{
     core::{
-        color_convert::{FromColor, Linear, Luma as PLuma}, padding::{pad_mirror, Padding},
-        DynamicImage, Image2D, Luma, Rgb,
+        color_convert::{FromColor, Linear, Luma as PLuma},
+        DynamicImage, Luma, Rgb
     },
-    draw::draw_cross, features::harris::harris_corners, io::{open, save},
-    processing::kernel::Kernel,
+    draw::draw_cross,
+    features::harris::harris_corners,
+    io::{open, save}
 };
 
 use failure::Error;
 
-use std::env::{args, current_dir};
+use std::env::args;
 
 fn main() -> Result<(), Error> {
     let in_img_path = args().nth(1).unwrap();
@@ -27,18 +28,7 @@ fn main() -> Result<(), Error> {
             let luma = PLuma::<u8>::new();
             let img_gray = luma.from_image(&lin, img.as_ref());
 
-            save("img_gray.png", &img_gray).unwrap();
-            let sobel_x = Kernel::<f64>::sobel_x_3x3();
-            let sobel_y = Kernel::<f64>::sobel_y_3x3();
-
-            let padded = pad_mirror(&img_gray, 3);
-            let dx = sobel_x.convolve::<Luma<u8>, Luma<f64>, u8, f64>(&padded, Padding::Mirror);
-            let dy = sobel_y.convolve::<Luma<u8>, Luma<f64>, u8, f64>(&padded, Padding::Mirror);
-
-            save("sobel_x.png", &dx);
-            save("sobel_y.png", &dy);
-
-            let corners = harris_corners(&img_gray, 3, 0.04);
+            let corners = harris_corners(&img_gray, 1, 0.015);
             println!("Found {} corners", corners.len());
             for corner in corners {
                 draw_cross(&mut *img, corner, 2, Rgb::new([255u8, 0u8, 0u8]));

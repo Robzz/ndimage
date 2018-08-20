@@ -6,7 +6,8 @@ use io::traits::ImageDecoder;
 use failure::Error;
 
 use tiff::{
-    decoder::{Decoder as TiffDecoder, DecodingResult}, ColorType, TiffError,
+    decoder::{Decoder as TiffDecoder, DecodingResult},
+    ColorType, TiffError
 };
 
 use std::io::{Read, Seek};
@@ -14,12 +15,12 @@ use std::io::{Read, Seek};
 /// TIFF decoder type
 pub struct Decoder<R>
 where
-    R: Read + Seek,
+    R: Read + Seek
 {
     reader: TiffDecoder<R>,
     channels: PixelType,
     depth: BitDepth,
-    dimensions: (u32, u32),
+    dimensions: (u32, u32)
 }
 
 #[derive(Fail, Debug)]
@@ -28,7 +29,11 @@ pub enum DecodingError {
     #[fail(display = "Internal decoder error")]
     /// Internal decoder error. These should not actually occur, please report them if you encounter any.
     Internal,
-    #[fail(display = "Incorrect pixel type, image type is {:?}({:?})", _0, _1)]
+    #[fail(
+        display = "Incorrect pixel type, image type is {:?}({:?})",
+        _0,
+        _1
+    )]
     /// The requested type is not the actual type of the image
     IncorrectPixelType(PixelType, BitDepth),
     #[fail(display = "Unsupported pixel type: {:?}", _0)]
@@ -36,12 +41,12 @@ pub enum DecodingError {
     UnsupportedType(ColorType),
     #[fail(display = "TIFF decoding error")]
     /// Actual decoding error storing the underlying cause.
-    Decoder(#[cause] TiffError),
+    Decoder(#[cause] TiffError)
 }
 
 impl<R> Decoder<R>
 where
-    R: Read + Seek,
+    R: Read + Seek
 {
     /// Create a new TIFF decoder object.
     pub fn new(buffer: R) -> Result<Decoder<R>, Error> {
@@ -57,14 +62,14 @@ where
             ColorType::RGBA(8u8) => (PixelType::RgbA, BitDepth::_8),
             ColorType::RGBA(16u8) => (PixelType::RgbA, BitDepth::_16),
             // TODO: support other types
-            _ => return Err(DecodingError::UnsupportedType(color_type).into()),
+            _ => return Err(DecodingError::UnsupportedType(color_type).into())
         };
         let dimensions = dec.dimensions()?;
         Ok(Decoder {
             reader: dec,
             channels,
             depth,
-            dimensions,
+            dimensions
         })
     }
 
@@ -88,10 +93,10 @@ where
                             luma_buffer
                         )))
                     }
-                    _ => Err(DecodingError::Internal.into()),
+                    _ => Err(DecodingError::Internal.into())
                 }
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into())
         }
     }
 
@@ -115,10 +120,10 @@ where
                             luma_buffer
                         )))
                     }
-                    _ => Err(DecodingError::Internal.into()),
+                    _ => Err(DecodingError::Internal.into())
                 }
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into())
         }
     }
 
@@ -142,10 +147,10 @@ where
                             luma_buffer
                         )))
                     }
-                    _ => Err(DecodingError::Internal.into()),
+                    _ => Err(DecodingError::Internal.into())
                 }
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into())
         }
     }
 
@@ -169,10 +174,10 @@ where
                             luma_buffer
                         )))
                     }
-                    _ => Err(DecodingError::Internal.into()),
+                    _ => Err(DecodingError::Internal.into())
                 }
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into())
         }
     }
 
@@ -189,19 +194,18 @@ where
                         let rgb_buffer = buffer
                             .chunks(3)
                             .map(|s| Rgb {
-                                data: [s[0], s[1], s[2]],
-                            })
-                            .collect::<Vec<Rgb<u8>>>();
+                                data: [s[0], s[1], s[2]]
+                            }).collect::<Vec<Rgb<u8>>>();
                         Ok(try!(ImageBuffer2D::from_vec(
                             self.dimensions.0,
                             self.dimensions.1,
                             rgb_buffer
                         )))
                     }
-                    _ => Err(DecodingError::Internal.into()),
+                    _ => Err(DecodingError::Internal.into())
                 }
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into())
         }
     }
 
@@ -218,19 +222,18 @@ where
                         let rgb_buffer = buffer
                             .chunks(4)
                             .map(|s| RgbA {
-                                data: [s[0], s[1], s[2], s[3]],
-                            })
-                            .collect::<Vec<RgbA<u8>>>();
+                                data: [s[0], s[1], s[2], s[3]]
+                            }).collect::<Vec<RgbA<u8>>>();
                         Ok(try!(ImageBuffer2D::from_vec(
                             self.dimensions.0,
                             self.dimensions.1,
                             rgb_buffer
                         )))
                     }
-                    _ => Err(DecodingError::Internal.into()),
+                    _ => Err(DecodingError::Internal.into())
                 }
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into())
         }
     }
 
@@ -247,19 +250,18 @@ where
                         let rgb_buffer = buffer
                             .chunks(3)
                             .map(|s| Rgb {
-                                data: [s[0], s[1], s[2]],
-                            })
-                            .collect::<Vec<Rgb<u16>>>();
+                                data: [s[0], s[1], s[2]]
+                            }).collect::<Vec<Rgb<u16>>>();
                         Ok(try!(ImageBuffer2D::from_vec(
                             self.dimensions.0,
                             self.dimensions.1,
                             rgb_buffer
                         )))
                     }
-                    _ => Err(DecodingError::Internal.into()),
+                    _ => Err(DecodingError::Internal.into())
                 }
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into())
         }
     }
 
@@ -276,19 +278,18 @@ where
                         let rgb_buffer = buffer
                             .chunks(4)
                             .map(|s| RgbA {
-                                data: [s[0], s[1], s[2], s[3]],
-                            })
-                            .collect::<Vec<RgbA<u16>>>();
+                                data: [s[0], s[1], s[2], s[3]]
+                            }).collect::<Vec<RgbA<u16>>>();
                         Ok(try!(ImageBuffer2D::from_vec(
                             self.dimensions.0,
                             self.dimensions.1,
                             rgb_buffer
                         )))
                     }
-                    _ => Err(DecodingError::Internal.into()),
+                    _ => Err(DecodingError::Internal.into())
                 }
             }
-            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into()),
+            (_, _) => Err(DecodingError::IncorrectPixelType(self.channels, self.depth).into())
         }
     }
 
@@ -305,7 +306,7 @@ where
 
 impl<R> ImageDecoder for Decoder<R>
 where
-    R: Read + Seek,
+    R: Read + Seek
 {
     fn read_header(&mut self) -> Result<ImageType, Error> {
         Ok((self.image_channels(), self.depth()))
@@ -323,7 +324,7 @@ where
                 Ok(DynamicImage::LumaAU8(Box::new(self.read_luma_alpha_u8()?)))
             }
             (PixelType::LumaA, BitDepth::_16) => Ok(DynamicImage::LumaAU16(Box::new(
-                self.read_luma_alpha_u16()?,
+                self.read_luma_alpha_u16()?
             ))),
             (PixelType::Rgb, BitDepth::_8) => {
                 Ok(DynamicImage::RgbU8(Box::new(self.read_rgb_u8()?)))

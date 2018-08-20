@@ -10,8 +10,7 @@ extern crate num_traits;
 extern crate png;
 #[cfg(feature = "rand_integration")]
 extern crate rand;
-#[macro_use]
-extern crate static_assertions;
+//extern crate static_assertions;
 #[cfg(test)]
 extern crate tempfile;
 extern crate tiff;

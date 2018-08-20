@@ -21,7 +21,7 @@ pub enum DynamicImage {
     /// 8 bit color with alpha image.
     RgbAU8(Box<ImageBuffer2D<RgbA<u8>>>),
     /// 16 bit color with alpha image.
-    RgbAU16(Box<ImageBuffer2D<RgbA<u16>>>),
+    RgbAU16(Box<ImageBuffer2D<RgbA<u16>>>)
 }
 
 impl DynamicImage {
@@ -29,7 +29,7 @@ impl DynamicImage {
     pub fn is_luma(&self) -> bool {
         match self {
             DynamicImage::LumaU8(_) | DynamicImage::LumaU16(_) => true,
-            _ => false,
+            _ => false
         }
     }
 
@@ -37,7 +37,7 @@ impl DynamicImage {
     pub fn is_luma_alpha(&self) -> bool {
         match self {
             DynamicImage::LumaAU8(_) | DynamicImage::LumaAU16(_) => true,
-            _ => false,
+            _ => false
         }
     }
 
@@ -45,7 +45,7 @@ impl DynamicImage {
     pub fn is_rgb(&self) -> bool {
         match self {
             DynamicImage::RgbU8(_) | DynamicImage::RgbU16(_) => true,
-            _ => false,
+            _ => false
         }
     }
 
@@ -53,7 +53,7 @@ impl DynamicImage {
     pub fn is_rgb_alpha(&self) -> bool {
         match self {
             DynamicImage::RgbAU8(_) | DynamicImage::RgbAU16(_) => true,
-            _ => false,
+            _ => false
         }
     }
 
@@ -63,7 +63,7 @@ impl DynamicImage {
             DynamicImage::LumaU8(_) | DynamicImage::LumaU16(_) => PixelType::Luma,
             DynamicImage::LumaAU8(_) | DynamicImage::LumaAU16(_) => PixelType::LumaA,
             DynamicImage::RgbU8(_) | DynamicImage::RgbU16(_) => PixelType::Rgb,
-            DynamicImage::RgbAU8(_) | DynamicImage::RgbAU16(_) => PixelType::RgbA,
+            DynamicImage::RgbAU8(_) | DynamicImage::RgbAU16(_) => PixelType::RgbA
         }
     }
 
@@ -77,7 +77,7 @@ impl DynamicImage {
             DynamicImage::LumaU16(_)
             | DynamicImage::LumaAU16(_)
             | DynamicImage::RgbU16(_)
-            | DynamicImage::RgbAU16(_) => BitDepth::_16,
+            | DynamicImage::RgbAU16(_) => BitDepth::_16
         }
     }
 
@@ -90,7 +90,7 @@ impl DynamicImage {
     pub fn into_luma_u8(self) -> Result<Box<ImageBuffer2D<Luma<u8>>>, Error> {
         match self {
             DynamicImage::LumaU8(img) => Ok(img),
-            _ => bail!("Incorrect image type!"),
+            _ => bail!("Incorrect image type!")
         }
     }
 
@@ -98,7 +98,7 @@ impl DynamicImage {
     pub fn into_luma_u16(self) -> Result<Box<ImageBuffer2D<Luma<u16>>>, Error> {
         match self {
             DynamicImage::LumaU16(img) => Ok(img),
-            _ => bail!("Incorrect image type!"),
+            _ => bail!("Incorrect image type!")
         }
     }
 
@@ -106,7 +106,7 @@ impl DynamicImage {
     pub fn into_luma_alpha_u8(self) -> Result<Box<ImageBuffer2D<LumaA<u8>>>, Error> {
         match self {
             DynamicImage::LumaAU8(img) => Ok(img),
-            _ => bail!("Incorrect image type!"),
+            _ => bail!("Incorrect image type!")
         }
     }
 
@@ -114,7 +114,7 @@ impl DynamicImage {
     pub fn into_luma_alpha_u16(self) -> Result<Box<ImageBuffer2D<LumaA<u16>>>, Error> {
         match self {
             DynamicImage::LumaAU16(img) => Ok(img),
-            _ => bail!("Incorrect image type!"),
+            _ => bail!("Incorrect image type!")
         }
     }
 
@@ -122,7 +122,7 @@ impl DynamicImage {
     pub fn into_rgb_u8(self) -> Result<Box<ImageBuffer2D<Rgb<u8>>>, Error> {
         match self {
             DynamicImage::RgbU8(img) => Ok(img),
-            _ => bail!("Incorrect image type!"),
+            _ => bail!("Incorrect image type!")
         }
     }
 
@@ -130,7 +130,7 @@ impl DynamicImage {
     pub fn into_rgb_u16(self) -> Result<Box<ImageBuffer2D<Rgb<u16>>>, Error> {
         match self {
             DynamicImage::RgbU16(img) => Ok(img),
-            _ => bail!("Incorrect image type!"),
+            _ => bail!("Incorrect image type!")
         }
     }
 
@@ -138,7 +138,7 @@ impl DynamicImage {
     pub fn into_rgb_alpha_u8(self) -> Result<Box<ImageBuffer2D<RgbA<u8>>>, Error> {
         match self {
             DynamicImage::RgbAU8(img) => Ok(img),
-            _ => bail!("Incorrect image type!"),
+            _ => bail!("Incorrect image type!")
         }
     }
 
@@ -146,7 +146,7 @@ impl DynamicImage {
     pub fn into_rgb_alpha_u16(self) -> Result<Box<ImageBuffer2D<RgbA<u16>>>, Error> {
         match self {
             DynamicImage::RgbAU16(img) => Ok(img),
-            _ => bail!("Incorrect image type!"),
+            _ => bail!("Incorrect image type!")
         }
     }
 }

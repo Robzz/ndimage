@@ -20,12 +20,12 @@ pub enum Format {
     /// PNG format.
     Png,
     /// TIFF format.
-    Tiff,
+    Tiff
 }
 
 fn parse_extension<P>(filepath: &P) -> Option<Format>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let ext = filepath
         .as_ref()
@@ -35,20 +35,20 @@ where
     match ext.as_str() {
         "tiff" => Some(Format::Tiff),
         "png" => Some(Format::Png),
-        _ => None,
+        _ => None
     }
 }
 
 /// Open an image on the filesystem. Try to guess the image format from the file extension.
 pub fn open<P>(filepath: P) -> Result<DynamicImage, Error>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     if let Some(format) = parse_extension(&filepath) {
         let file = File::open(filepath)?;
         match format {
             Format::Png => png::Decoder::new(file)?.read_image(),
-            Format::Tiff => tiff::Decoder::new(file)?.read_image(),
+            Format::Tiff => tiff::Decoder::new(file)?.read_image()
         }
     } else {
         bail!("Could not infer image format from file extension!")
@@ -60,7 +60,7 @@ pub fn save<I, P, P2>(filepath: P2, img: &I) -> Result<(), Error>
 where
     I: Image2D<P>,
     P: Pixel + PngEncodable<P>,
-    P2: AsRef<Path>,
+    P2: AsRef<Path>
 {
     if let Some(format) = parse_extension(&filepath) {
         match format {
@@ -188,7 +188,7 @@ mod tests {
     fn mk_test_img<P, S>() -> ImageBuffer2D<P>
     where
         P: Pixel<Subpixel = S> + Zero,
-        S: Primitive + Sized,
+        S: Primitive + Sized
     {
         let mut img = ImageBuffer2D::new(32, 32);
         for y in 0..32 {
@@ -205,7 +205,7 @@ mod tests {
     where
         F: FnOnce(P2) -> Result<Box<ImageBuffer2D<P>>, Error>,
         P: Pixel<Subpixel = u8> + Debug + PngEncodable<P>,
-        P2: AsRef<Path>,
+        P2: AsRef<Path>
     {
         {
             save(&path, &img).unwrap();
@@ -218,7 +218,7 @@ mod tests {
     where
         F: FnOnce(P2) -> Result<Box<ImageBuffer2D<P>>, Error>,
         P: Pixel<Subpixel = u16> + Debug + PngEncodable<P>,
-        P2: AsRef<Path>,
+        P2: AsRef<Path>
     {
         {
             save(&path, &img).unwrap();
@@ -241,42 +241,42 @@ mod tests {
         helper_test_write_roundtrip_u8(
             dir.path().join("test_save_png_luma_u8.png"),
             img_luma_u8,
-            |p| open(p)?.into_luma_u8(),
+            |p| open(p)?.into_luma_u8()
         );
         helper_test_write_roundtrip_u16(
             dir.path().join("test_save_png_luma_u16.png"),
             img_luma_u16,
-            |p| open(p)?.into_luma_u16(),
+            |p| open(p)?.into_luma_u16()
         );
         helper_test_write_roundtrip_u8(
             dir.path().join("test_save_png_luma_alpha_u8.png"),
             img_luma_alpha_u8,
-            |p| open(p)?.into_luma_u8(),
+            |p| open(p)?.into_luma_u8()
         );
         helper_test_write_roundtrip_u16(
             dir.path().join("test_save_png_luma_alpha_u16.png"),
             img_luma_alpha_u16,
-            |p| open(p)?.into_luma_u16(),
+            |p| open(p)?.into_luma_u16()
         );
         helper_test_write_roundtrip_u8(
             dir.path().join("test_save_png_rgb_u8.png"),
             img_rgb_u8,
-            |p| open(p)?.into_rgb_u8(),
+            |p| open(p)?.into_rgb_u8()
         );
         helper_test_write_roundtrip_u16(
             dir.path().join("test_save_png_rgb_u16.png"),
             img_rgb_u16,
-            |p| open(p)?.into_rgb_u16(),
+            |p| open(p)?.into_rgb_u16()
         );
         helper_test_write_roundtrip_u8(
             dir.path().join("test_save_png_rgb_alpha_u8.png"),
             img_rgb_alpha_u8,
-            |p| open(p)?.into_rgb_u8(),
+            |p| open(p)?.into_rgb_u8()
         );
         helper_test_write_roundtrip_u16(
             dir.path().join("test_save_png_rgb_alpha_u16.png"),
             img_rgb_alpha_u16,
-            |p| open(p)?.into_rgb_u16(),
+            |p| open(p)?.into_rgb_u16()
         );
     }
 }

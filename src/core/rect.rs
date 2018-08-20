@@ -10,7 +10,7 @@ pub struct Rect {
     left: u32,
     top: u32,
     width: u32,
-    height: u32,
+    height: u32
 }
 
 impl Rect {
@@ -25,7 +25,7 @@ impl Rect {
             left: x,
             top: y,
             width: w,
-            height: h,
+            height: h
         }
     }
 
@@ -86,7 +86,7 @@ impl Rect {
     /// Test whether the Rect fits in the given image.
     pub fn fits_image<P>(&self, img: &Image2D<P>) -> bool
     where
-        P: Pixel,
+        P: Pixel
     {
         self.right() < img.width() && self.bottom() < img.height()
     }
@@ -94,7 +94,7 @@ impl Rect {
     /// Crop the `Rect` to the biggest sub-`Rect` that can fit `img` if it exists, `None` otherwise.
     pub fn crop_to_image<P>(&self, img: &Image2D<P>) -> Option<Rect>
     where
-        P: Pixel,
+        P: Pixel
     {
         let r = Rect::new(0, 0, img.width(), img.height());
         self.intersection(&r)

@@ -11,7 +11,7 @@ pub trait Neighborhood {
 #[allow(dead_code)]
 pub struct RectNeighborhood {
     size: (u32, u32),
-    origin: (u32, u32),
+    origin: (u32, u32)
 }
 
 impl Neighborhood for RectNeighborhood {

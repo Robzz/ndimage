@@ -57,13 +57,13 @@ where
                 // Perform the convolution on the kernel floating point type.
                 region_accu.extend(
                     p.channels()
-                        .into_iter()
+                        .iter()
                         .map(|c| *e * <T as NumCast>::from::<S>(*c).unwrap()),
                 );
             }
             pix_accu_t
                 .as_mut_slice()
-                .into_iter()
+                .iter_mut()
                 .map(|c| *c = <T as Zero>::zero())
                 .count();
             for convolved_pix in region_accu.as_slice().chunks(n_channels as usize) {
@@ -92,8 +92,8 @@ where
         let n = d * d;
         let mut v = Vec::with_capacity(n as usize);
         let r = <i64 as From<u32>>::from(radius);
-        for y in -r..r + 1 {
-            for x in -r..r + 1 {
+        for y in -r..=r {
+            for x in -r..=r {
                 v.push(math::gaussian_2d(
                     f64_to_float::<T>(x as f64),
                     f64_to_float::<T>(y as f64),

@@ -1,5 +1,5 @@
 //! Defines a generic 2D image type.
-#![allow(unknown_lints, deref_addrof)]
+#![allow(unknown_lints)]
 
 use core::{Luma, LumaA, Pixel, PixelType, Primitive, Rect, Rgb, RgbA};
 
@@ -10,7 +10,8 @@ use ndarray::{OwnedRepr, ViewRepr};
 use num_traits::Zero;
 #[cfg(feature = "rand_integration")]
 use rand::{
-    distributions::{Distribution, Standard}, Rng,
+    distributions::{Distribution, Standard},
+    Rng,
 };
 
 use std::cmp::min;
@@ -536,7 +537,8 @@ where
         let bottom = top + rect.height() as isize;
 
         RectIterMut {
-            iter: self.buffer
+            iter: self
+                .buffer
                 .slice_mut(s![top..bottom, left..right])
                 .into_iter(),
         }
@@ -848,7 +850,7 @@ mod tests {
 
     #[test]
     fn test_into_iter() {
-        let v: Vec<Luma<u8>> = (1..10).map(|i| Luma::from(i)).collect();
+        let v: Vec<Luma<u8>> = (1..10).map(Luma::from).collect();
         let img = ImageBuffer2D::from_vec(3, 3, v.clone()).unwrap();
 
         for (p, i) in img.into_iter().zip(v.into_iter()) {
@@ -860,7 +862,8 @@ mod tests {
     fn test_enumerate_pixels() {
         let img = ImageBuffer2D::generate(5, 3, |(x, y)| Luma::from((2 * x + 3 * y) as u8));
 
-        for ((x, y), p) in img.enumerate_pixels()
+        for ((x, y), p) in img
+            .enumerate_pixels()
             .map(|((y, x), p)| ((x, y), p.channels()[0]))
         {
             assert_eq!((2 * x + 3 * y) as u8, p);
@@ -1070,8 +1073,8 @@ mod tests {
         let img = ImageBuffer2D::from_vec(5, 3, v).unwrap();
         let subimg1 = img.rect_iter(Rect::new(1, 1, 3, 1));
 
-        fn subimg_vec_eq<'a>(subimg: super::RectIter<'a, Luma<u8>>, v: &Vec<u8>) -> bool {
-            v.into_iter().zip(subimg).all(|(p, l)| *p == l.data[0])
+        fn subimg_vec_eq<'a>(subimg: super::RectIter<'a, Luma<u8>>, v: &[u8]) -> bool {
+            v.iter().zip(subimg).all(|(p, l)| *p == l.data[0])
         }
 
         let subimg1_vec: Vec<u8> = vec![7, 8, 9];
@@ -1130,7 +1133,7 @@ mod tests {
         let mut i = 0;
         for ((y, x), p) in sub_img.enumerate_pixels() {
             assert_eq!(&Luma::new([(2 * (x + 1) + 3 * (y + 1)) as u8]), p);
-            i = i + 1;
+            i += 1;
         }
         assert_eq!(i, 9);
     }
@@ -1226,7 +1229,9 @@ mod tests {
     #[cfg(feature = "rand_integration")]
     fn test_rand() {
         let img = ImageBuffer2D::<Luma<u8>>::rand(1280, 720, &mut thread_rng());
-        let sum = img.into_iter().fold(0u32, |acc, p| acc + p.data[0] as u32);
+        let sum = img
+            .into_iter()
+            .fold(0u32, |acc, p| acc + u32::from(p.data[0]));
         assert!(sum > 100_000_000 && sum < 130_000_000);
     }
 }

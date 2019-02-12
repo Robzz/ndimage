@@ -10,7 +10,7 @@ rand_integration = ["rand"]
 [dependencies]
 byteorder = "1.2"
 failure = "0.1"
-ndarray = "0.11"
+ndarray = "0.12"
 num-traits = "0.2"
 png = "0.12"
 tiff = "0.1"

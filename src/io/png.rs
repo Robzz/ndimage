@@ -514,7 +514,7 @@ mod tests {
         F: FnOnce(Decoder<Cursor<&[u8]>>) -> Result<ImageBuffer2D<P>, Error>,
         P: Pixel<Subpixel = u8> + Debug,
     {
-        let mut buf = vec![0; 200000];
+        let mut buf = vec![0; 200_000];
         {
             let cursor = Cursor::new(buf.as_mut_slice());
             let encoder = Encoder8::new();
@@ -531,7 +531,7 @@ mod tests {
         F: FnOnce(Decoder<Cursor<&[u8]>>) -> Result<ImageBuffer2D<P>, Error>,
         P: Pixel<Subpixel = u16> + Debug,
     {
-        let mut buf = vec![0; 200000];
+        let mut buf = vec![0; 200_000];
         {
             let cursor = Cursor::new(buf.as_mut_slice());
             let encoder = Encoder16::new();
@@ -550,7 +550,8 @@ mod tests {
             |d| d.read_luma_u8(),
             32,
             32,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]
@@ -560,7 +561,8 @@ mod tests {
             |d| d.read_luma_alpha_u8(),
             32,
             32,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]
@@ -570,7 +572,8 @@ mod tests {
             |d| d.read_luma_u16(),
             32,
             32,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]
@@ -580,7 +583,8 @@ mod tests {
             |d| d.read_luma_alpha_u16(),
             32,
             32,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]
@@ -595,7 +599,8 @@ mod tests {
             |d| d.read_rgb_alpha_u8(),
             32,
             32,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]
@@ -605,7 +610,8 @@ mod tests {
             |d| d.read_rgb_u16(),
             32,
             32,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]
@@ -615,7 +621,8 @@ mod tests {
             |d| d.read_rgb_alpha_u16(),
             32,
             32,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     #[test]

@@ -70,10 +70,10 @@ where
 {
     let h: Histogram = img.into();
     let cumul = h.cumulative();
-    let m = *cumul.bins().into_iter().max().unwrap();
+    let m = *cumul.bins().iter().max().unwrap();
     let transfer = cumul
         .bins()
-        .into_iter()
+        .iter()
         .map(|val| ((Into::<f64>::into(*val) * 255.) / (Into::<f64>::into(m))) as u8)
         .collect::<Vec<u8>>();
     let mut equalized = img.to_owned();

@@ -4,7 +4,8 @@ use num_traits::cast::cast;
 use num_traits::{Bounded, One, Zero};
 #[cfg(feature = "rand_integration")]
 use rand::{
-    distributions::{Distribution, Standard}, Rng,
+    distributions::{Distribution, Standard},
+    Rng,
 };
 
 use core::{Pixel, PixelCast, Primitive};
@@ -467,16 +468,10 @@ mod tests {
         let l1 = Luma::new([5u8]);
         let l2 = Luma::new([7u8]);
         let l3 = Luma::new([12u8]);
-        assert_eq!(&l1 + &l2, l3.clone());
-        assert_eq!(&l1 + l2.clone(), l3.clone());
-        assert_eq!(l1.clone() + &l2, l3.clone());
-        assert_eq!(l1.clone() + l2.clone(), l3.clone());
+        assert_eq!(l1 + l2, l3);
 
         let l4 = Luma::new([17u8]);
-        assert_eq!(l3 + 5u8, l4.clone());
-        assert_eq!(l3 + &5u8, l4.clone());
-        assert_eq!(&l3 + 5u8, l4.clone());
-        assert_eq!(&l3 + &5u8, l4.clone());
+        assert_eq!(l3 + 5u8, l4);
     }
 
     #[test]
@@ -484,15 +479,9 @@ mod tests {
         let l1 = Luma::new([15u8]);
         let l2 = Luma::new([7u8]);
         let l3 = Luma::new([8u8]);
-        assert_eq!(&l1 - &l2, l3.clone());
-        assert_eq!(&l1 - l2.clone(), l3.clone());
-        assert_eq!(l1.clone() - &l2, l3.clone());
-        assert_eq!(l1.clone() - l2.clone(), l3.clone());
+        assert_eq!(l1 - l2, l3);
 
         let l4 = Luma::new([3u8]);
-        assert_eq!(l3 - 5u8, l4.clone());
-        assert_eq!(l3 - &5u8, l4.clone());
-        assert_eq!(&l3 - 5u8, l4.clone());
-        assert_eq!(&l3 - &5u8, l4.clone());
+        assert_eq!(l3 - 5u8, l4);
     }
 }
